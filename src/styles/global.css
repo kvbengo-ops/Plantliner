@@ -290,12 +290,17 @@ h2 { font-size: clamp(3rem, 5vw, 5.4rem); }
 @media (hover: hover) { .space-choice:hover { border-color: #80977c; background: #f4f7f0; } }
 .space-choice:has(input:checked) { border-color: #527750; background: #edf3e9; box-shadow: inset 0 0 0 1px #527750; }
 .space-choice:focus-within { outline: 3px solid #afc4a0; outline-offset: 2px; }
-.choice-photo { grid-column: 1 / -1; width: calc(100% + 28px); max-width: none; height: 90px; margin: 0 -14px 13px; object-fit: cover; }
+.space-illustration { background: #eaf0e5; }
+.illustration-sway { transform-box: fill-box; transform-origin: bottom center; }
+@media (prefers-reduced-motion: no-preference) {
+  .space-choice:has(input:checked) .illustration-sway { animation: leaf-sway 900ms cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes leaf-sway { 0%, 100% { rotate: 0deg; } 35% { rotate: -5deg; } 70% { rotate: 3deg; } }
+}
 .space-choice input { grid-column: 2; grid-row: 2; width: 18px; height: 18px; margin: 1px 0 0; accent-color: #3c6343; }
 .space-choice > span { grid-column: 1; grid-row: 2; color: #344833; font-size: .92rem; font-weight: 700; }
 .space-choice small { grid-column: 1 / -1; margin-top: 5px; color: #5e6b59; font-size: .75rem; line-height: 1.5; }
 .space-choice-wide { grid-column: 1 / -1; padding: 15px; }
-.space-choice-wide input, .space-choice-wide > span { grid-row: 1; }
+.space-choice-wide input, .space-choice-wide > span { grid-row: 2; }
 .optional-label { float: right; margin-left: 8px; font-size: .72rem; font-weight: 400; }
 .wizard-actions { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-top: 27px; }
 .wizard-back { min-height: 48px; padding: 10px 18px; border: 1px solid #b6c4ad; border-radius: 12px; background: var(--control-fill); box-shadow: var(--control-shadow); color: var(--leaf); font-size: .8rem; font-weight: 700; cursor: pointer; }
@@ -484,7 +489,7 @@ fieldset.field { min-width: 0; margin-inline: 0; padding: 0; border: 0; }
   .wizard-progress { margin-bottom: 28px; }
   .space-choices { gap: 10px; }
   .space-choice { padding-inline: 11px; }
-  .choice-photo { width: calc(100% + 22px); margin-inline: -11px; height: 76px; }
+  .space-illustration { width: calc(100% + 22px); margin-inline: -11px; height: 76px; }
   .space-choice-wide { grid-column: 1 / -1; }
   .wizard-progress { gap: 6px; font-size: .7rem; }
   .wizard-progress li { flex-direction: column; gap: 6px; }
