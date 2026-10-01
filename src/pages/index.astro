@@ -1,7 +1,7 @@
 ---
 import { Image } from 'astro:assets';
 import ArrowIcon from '../components/ArrowIcon.astro';
-import SpaceIllustration from '../components/SpaceIllustration.astro';
+import SpaceIcon from '../components/SpaceIcon.astro';
 import hero from '../assets/hero.png';
 import reception from '../assets/reception.png';
 import office from '../assets/office.png';
@@ -225,13 +225,13 @@ const questions = [
                   <div class="space-choices">
                     {spaces.map((space) => (
                       <label class="space-choice">
-                        <SpaceIllustration variant={space.slug as 'office' | 'cafe' | 'school' | 'retail'} />
+                        <SpaceIcon variant={space.slug as 'office' | 'cafe' | 'school' | 'retail'} />
                         <input type="radio" name="space" value={space.slug} required aria-describedby="space-error" />
                         <span>{space.slug === 'office' ? 'Office' : space.slug === 'cafe' ? 'Café' : space.slug === 'school' ? 'School' : 'Retail space'}</span>
                         <small>{space.slug === 'office' ? 'Desks & meeting rooms' : space.slug === 'cafe' ? 'Counters & seating' : space.slug === 'school' ? 'Classrooms & libraries' : 'Entrances & displays'}</small>
                       </label>
                     ))}
-                    <label class="space-choice space-choice-wide"><SpaceIllustration variant="other" /><input type="radio" name="space" value="other" aria-describedby="space-error" /><span>Something else</span><small>We'll find what works for your space.</small></label>
+                    <label class="space-choice space-choice-wide"><SpaceIcon variant="other" /><input type="radio" name="space" value="other" aria-describedby="space-error" /><span>Something else</span><small>We'll find what works for your space.</small></label>
                   </div>
                 </fieldset>
                 <small class="field-error" id="space-error" role="status"></small>

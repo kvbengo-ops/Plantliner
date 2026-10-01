@@ -2,7 +2,7 @@
 
 ## Tabler Icons
 
-The arrow icon in `src/components/ArrowIcon.astro` and the sun, layout-grid and droplet icons in the principles strip of `src/pages/index.astro` are adapted from [Tabler Icons](https://github.com/tabler/tabler-icons).
+The form icons in `src/components/SpaceIcon.astro`, the arrow icon in `src/components/ArrowIcon.astro` and the sun, layout-grid and droplet icons in the principles strip of `src/pages/index.astro` are adapted from [Tabler Icons](https://github.com/tabler/tabler-icons).
 
 MIT License
 
