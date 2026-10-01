@@ -506,12 +506,9 @@ fieldset.field { min-width: 0; margin-inline: 0; padding: 0; border: 0; }
 .hero-image { animation: settle 1200ms var(--ease-out) backwards; }
 
 /* scroll reveal: the observer in index.astro sets data-pending on below-fold content, then data-in once it scrolls into view */
-@keyframes clip-in { from { clip-path: inset(0 0 100% 0); } }
 @keyframes draw-x { from { clip-path: inset(0 100% 0 0); } }
 [data-pending] { opacity: 0; }
 [data-in] { animation: rise-in 400ms var(--ease-out) backwards; animation-delay: var(--delay, 0ms); }
-.concept-image-wrap > img[data-pending] { opacity: 1; clip-path: inset(0 0 100% 0); }
-.concept-image-wrap > img[data-in] { animation-name: clip-in; animation-duration: 600ms; animation-timing-function: var(--ease-in-out); }
 .image-badge[data-in] { animation-delay: 400ms; }
 .step[data-in] .step-rule::after { animation: draw-x 600ms var(--ease-in-out) backwards; animation-delay: calc(var(--delay, 0ms) + 200ms); }
 .hero-content > :nth-child(2) { animation-delay: 60ms; }

@@ -136,7 +136,7 @@ const questions = [
       <section class="section concept-section" aria-labelledby="concept-title">
         <div class="container concept-grid">
           <div class="concept-image-wrap">
-            <Image src={reception} alt="Low-light plants thoughtfully placed around a reception desk" width={1000} format="webp" loading="lazy" />
+            <Image src={reception} alt="Low-light plants thoughtfully placed around a reception desk" width={900} widths={[360, 540, 720, 900]} sizes="(max-width: 760px) calc(100vw - 36px), (max-width: 1100px) 44vw, 50vw" format="webp" loading="lazy" />
             <span class="image-badge">A space, considered</span>
           </div>
           <div class="concept-copy">
@@ -490,7 +490,7 @@ const questions = [
             revealObserver.unobserve(el);
           });
         }, { rootMargin: '0px 0px -10% 0px' });
-        const revealTargets = [...document.querySelectorAll<HTMLElement>('.principles-inner > div, .concept-image-wrap > img, .image-badge, .concept-copy > *, .solutions-heading > *, .slider-controls, .space-grid, .process-top > *, .step, .faq-heading > *, .faq-list details, .enquiry-copy > *, .form-panel')]
+        const revealTargets = [...document.querySelectorAll<HTMLElement>('.principles-inner > div, .image-badge, .concept-copy > *, .solutions-heading > *, .slider-controls, .space-grid, .process-top > *, .step, .faq-heading > *, .faq-list details, .enquiry-copy > *, .form-panel')]
           .filter((el) => el.getBoundingClientRect().top > innerHeight); // all reads before any writes
         revealTargets.forEach((el) => { el.setAttribute('data-pending', ''); revealObserver.observe(el); });
       }
