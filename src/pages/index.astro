@@ -189,7 +189,7 @@ const questions = [
               </article>
             ))}
           </div>
-          <div class="slider-footer"><span class="slider-hint">Swipe or drag to explore</span><p class="slider-status" aria-live="polite" aria-atomic="true">01 / 04 ? Offices</p></div>
+          <div class="slider-footer"><span class="slider-hint">Swipe or drag to explore</span><p class="slider-status" aria-live="polite" aria-atomic="true">01 / 04 - Offices</p></div>
           <p class="photo-note">Imagery is illustrative of possible plant styling, not completed Plantliner projects.</p>
         </div>
       </section>
@@ -416,10 +416,12 @@ const questions = [
         next.addEventListener('click', () => goTo((navigating ? requested : active) + 1));
         track.addEventListener('keydown', (event) => {
           if (event.target !== track) return;
-          const index = { ArrowLeft: active - 1, ArrowRight: active + 1, Home: count, End: count * 2 - 1 }[event.key];
+          // Same glide as the arrow buttons (reduced motion makes it instant via CSS scroll-behavior); key repeat stacks like rapid clicks.
+          const from = navigating ? requested : active;
+          const index = { ArrowLeft: from - 1, ArrowRight: from + 1, Home: count, End: count * 2 - 1 }[event.key];
           if (index === undefined) return;
           event.preventDefault();
-          goTo(index, true);
+          goTo(index);
         });
 
         let drag: { x: number; left: number; index: number } | undefined;

@@ -56,7 +56,7 @@ h2 { font-size: clamp(3rem, 5vw, 5.4rem); }
   .text-link:hover span { transform: translateY(2px); }
 }
 /* after the hover block so press wins while hovered */
-.button:active, .menu-toggle:active, .slider-arrow:active, .choice-row label:active { transform: scale(.97); }
+.button:active, .menu-toggle:active, .slider-arrow:active, .slider-chip:active, .choice-row label:active { transform: scale(.97); }
 
 .site-header { position: relative; z-index: 20; background: var(--cream); border-bottom: 1px solid rgba(35, 53, 39, .08); }
 .header-inner { display: flex; align-items: center; min-height: 81px; gap: 40px; }
@@ -116,7 +116,7 @@ h2 { font-size: clamp(3rem, 5vw, 5.4rem); }
 /* One centered selection, with native touch momentum and room for adjacent previews. */
 .slider-controls { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin: -16px 0 22px; }
 .slider-chips { display: flex; flex-wrap: wrap; gap: 0 26px; }
-.slider-chip { position: relative; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0; border: 0; background: none; color: var(--muted); font-size: .8rem; font-weight: 700; cursor: pointer; transition: color .2s ease; }
+.slider-chip { position: relative; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0; border: 0; background: none; color: var(--muted); font-size: .8rem; font-weight: 700; cursor: pointer; transition: color .2s ease, transform 160ms var(--ease-out); }
 .slider-chip span { font-size: .62rem; letter-spacing: .1em; }
 .slider-chip::after { content: ''; position: absolute; left: 0; right: 0; bottom: 9px; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform 250ms var(--ease-out); }
 .slider-chip[aria-current='true'] { color: var(--forest); }
@@ -180,12 +180,15 @@ h2 { font-size: clamp(3rem, 5vw, 5.4rem); }
 .space-copy { display: flex; flex-direction: column; justify-content: center; padding: clamp(20px, 2.2vw, 30px); }
 .space-copy h3 { margin-bottom: 18px; font-family: 'DM Serif Display', Georgia, serif; font-size: clamp(1.8rem, 2.5vw, 2.4rem); line-height: 1.12; letter-spacing: -.02em; }
 .space-copy > p { margin-bottom: 16px; color: #616b5f; font-size: .9rem; line-height: 1.75; }
-.space-plants { display: block; margin-bottom: 18px; color: var(--muted); font-size: .72rem; line-height: 1.7; }
+.space-plants { display: block; margin-bottom: 18px; color: var(--muted); font-size: .75rem; line-height: 1.7; }
 .card-link { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding-top: 14px; border-top: 1px solid #d9dfd5; color: #39583a; font-size: .8rem; font-weight: 700; touch-action: manipulation; }
-.card-link span { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: #e4eadc; font-size: 1.1rem; font-weight: 400; transition: transform 200ms ease, background-color 200ms ease, color 200ms ease, scale 120ms var(--ease-out); }
+.card-link span { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: #e4eadc; transition: transform 200ms ease, background-color 200ms ease, color 200ms ease, scale 120ms var(--ease-out); }
 /* The whole card is the link; off-center cards still just slide to the middle (click handler in index.astro). */
 .card-link::before { content: ''; position: absolute; inset: 0; }
 .card-link:active span { scale: .88; }
+/* Press feedback for the whole card, now that all of it is the link. */
+.space-card-surface { transition: scale 160ms var(--ease-out); }
+.space-card[data-active]:active .space-card-surface { scale: .985; }
 .space-image img { transition: scale 700ms var(--ease-out); }
 @media (hover: hover) and (pointer: fine) {
   .space-card[data-active]:hover .card-link span { background: var(--leaf); color: white; }
@@ -427,7 +430,7 @@ fieldset.field { min-width: 0; margin-inline: 0; padding: 0; border: 0; }
   .concept-copy h2 br { display: none; }
   .section-heading, .process-top { display: block; }
   .section-heading > p, .process-top > p { max-width: 490px; margin-top: 20px; }
-  .space-grid { --gutter: max(18px, (100vw - 600px) / 2); --card-width: min(78vw, 380px); gap: 12px; padding-block: 16px 36px; }
+  .space-grid { --gutter: max(18px, (100vw - 600px) / 2); --card-width: min(84vw, 400px); gap: 12px; padding-block: 16px 36px; }
   .space-card-surface { grid-template-columns: 1fr; border-radius: 12px; }
   .space-image { min-height: 0; height: clamp(160px, 43vw, 210px); }
   .space-number { margin-bottom: 12px; }
@@ -436,8 +439,16 @@ fieldset.field { min-width: 0; margin-inline: 0; padding: 0; border: 0; }
   .space-plants { margin-bottom: 18px; }
   .slider-footer { font-size: .68rem; }
   /* touch swipes natively; chips stay for tapping straight to a space */
-  .slider-arrows { display: none; }
-  .slider-chips { gap: 0 20px; }
+  .slider-controls { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; margin: 0 0 14px; }
+  .slider-chips { min-width: 0; flex-wrap: nowrap; gap: 0 18px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
+  .slider-chips::-webkit-scrollbar { display: none; }
+  .slider-chip { flex: 0 0 auto; min-height: 44px; font-size: .76rem; }
+  .slider-arrows { display: flex; flex: 0 0 auto; gap: 6px; }
+  .slider-arrow { width: 42px; height: 42px; }
+  .slider-arrow .arrow-icon { width: 18px; height: 18px; }
+  .slider-footer { width: 100%; align-items: center; gap: 8px; margin-top: 8px; font-size: .68rem; }
+  .slider-hint { min-width: 0; }
+  .slider-status { flex: 0 0 auto; font-variant-numeric: tabular-nums; }
   .space-copy { padding: 20px; }
   .steps { grid-template-columns: 1fr; gap: 40px; margin: 45px 0; }
   .step-rule { margin: 10px 0 19px; }
@@ -452,7 +463,17 @@ fieldset.field { min-width: 0; margin-inline: 0; padding: 0; border: 0; }
 @media (max-width: 520px) {
   .hero, .hero-inner { min-height: 730px; }
   .hero-content { padding-top: 42px; }
-  .hero h1 { margin-bottom: 20px; font-size: clamp(3.4rem, 13.5vw, 4.4rem); }
+  .hero h1 { margin-bottom: 20px; font-size: clamp(3.2rem, 12.5vw, 4.2rem); }
+  .solutions-section .section-heading { margin-bottom: 28px; }
+  .solutions-section .section-heading h2 { font-size: clamp(2.5rem, 10.5vw, 3.6rem); }
+  .solutions-section .section-heading > p { font-size: .88rem; line-height: 1.65; }
+  .space-grid { --card-width: min(86vw, 400px); gap: 10px; }
+  .space-copy { padding: 18px; }
+  .space-copy h3 { font-size: clamp(1.7rem, 8vw, 2rem); }
+  .space-copy > p { font-size: .82rem; line-height: 1.6; }
+  .slider-chips { gap: 0 14px; }
+  .slider-chip { gap: 5px; font-size: .72rem; }
+  .slider-footer { font-size: .64rem; }
   .hero-description { margin-bottom: 21px; }
   .hero-actions { align-items: flex-start; flex-direction: column; gap: 11px; }
   .hero-caption { display: none; }
