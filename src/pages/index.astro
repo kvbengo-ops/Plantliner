@@ -1,5 +1,6 @@
 ---
 import { Image } from 'astro:assets';
+import ArrowIcon from '../components/ArrowIcon.astro';
 import hero from '../assets/hero.png';
 import reception from '../assets/reception.png';
 import office from '../assets/office.png';
@@ -92,7 +93,7 @@ const questions = [
           <a href="#how-it-works">How it works</a>
           <a href="#faq">FAQ</a>
         </nav>
-        <a class="button button-dark header-cta" href="#enquiry">Request a plant plan <span aria-hidden="true">↗</span></a>
+        <a class="button button-dark header-cta" href="#enquiry">Request a plant plan <span aria-hidden="true"><ArrowIcon direction="up-right" /></span></a>
         <button class="menu-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav">
           <span></span><span></span>
         </button>
@@ -115,8 +116,8 @@ const questions = [
             <h1 id="hero-title">The right plant,<br />for the <em>right space.</em></h1>
             <p class="hero-description">Thoughtful plant solutions for offices, cafés, schools, and retail spaces—selected to suit your light, layout, and level of care.</p>
             <div class="hero-actions">
-              <a class="button button-green" href="#enquiry">Request a plant plan <span aria-hidden="true">↗</span></a>
-              <a class="text-link" href="#solutions">Explore solutions <span aria-hidden="true">↓</span></a>
+              <a class="button button-green" href="#enquiry">Request a plant plan <span aria-hidden="true"><ArrowIcon direction="up-right" /></span></a>
+              <a class="text-link" href="#solutions">Explore solutions <span aria-hidden="true"><ArrowIcon direction="down" /></span></a>
             </div>
           </div>
           <div class="hero-caption"><span class="caption-line"></span> Spaces feel better with plants that belong.</div>
@@ -164,8 +165,8 @@ const questions = [
               ))}
             </div>
             <div class="slider-arrows">
-              <button type="button" class="slider-arrow" aria-controls="space-track" aria-label="Previous space">←</button>
-              <button type="button" class="slider-arrow" aria-controls="space-track" aria-label="Next space">→</button>
+              <button type="button" class="slider-arrow" aria-controls="space-track" aria-label="Previous space"><ArrowIcon direction="left" /></button>
+              <button type="button" class="slider-arrow" aria-controls="space-track" aria-label="Next space"><ArrowIcon direction="right" /></button>
             </div>
           </div>
           <div class="space-grid" id="space-track" role="region" aria-label="Spaces" aria-roledescription="carousel" tabindex="0">
@@ -181,7 +182,7 @@ const questions = [
                   <p>{space.description}</p>
                   <span class="space-plants">{space.plants}</span>
                   <a href={`#enquiry`} data-space={space.slug} class="card-link" aria-label={`Request a plant plan for ${space.name}`}>
-                    Request a plan <span aria-hidden="true">↗</span>
+                    Request a plan <span aria-hidden="true"><ArrowIcon direction="up-right" /></span>
                   </a>
                 </div>
                 </div>
@@ -232,7 +233,7 @@ const questions = [
                   </div>
                 </fieldset>
                 <small class="field-error" id="space-error" role="status"></small>
-                <button class="button button-green form-submit" type="button" data-next>Continue to details <span aria-hidden="true">→</span></button>
+                <button class="button button-green form-submit" type="button" data-next>Continue to details <span aria-hidden="true"><ArrowIcon direction="right" /></span></button>
               </div>
 
               <div class="form-step" data-step="1" aria-labelledby="step-details-title" hidden>
@@ -250,9 +251,9 @@ const questions = [
                     <p class="field-hint" id="size-hint">A rough estimate is all we need.</p>
                   </div>
                 </div>
-                <div class="field"><label for="photo">A photo of your space <span class="optional-label">Optional</span></label><label class="upload-box" for="photo"><span class="upload-icon" aria-hidden="true">↥</span><span id="photo-label">Choose a photo to share</span><span class="upload-hint">JPG, PNG, or WebP · up to 10 MB</span></label><input class="visually-hidden" id="photo" aria-describedby="photo-error" name="photo" type="file" accept="image/jpeg,image/png,image/webp" /><small class="field-error" id="photo-error" role="status"></small></div>
+                <div class="field"><label for="photo">A photo of your space <span class="optional-label">Optional</span></label><label class="upload-box" for="photo"><span class="upload-icon" aria-hidden="true"><ArrowIcon direction="up" /></span><span id="photo-label">Choose a photo to share</span><span class="upload-hint">JPG, PNG, or WebP · up to 10 MB</span></label><input class="visually-hidden" id="photo" aria-describedby="photo-error" name="photo" type="file" accept="image/jpeg,image/png,image/webp" /><small class="field-error" id="photo-error" role="status"></small></div>
                 <div class="field"><label for="notes">Anything else we should know? <span class="optional-label">Optional</span></label><textarea id="notes" name="notes" rows="4" placeholder="Tell us about your space, ideas, or questions..."></textarea></div>
-                <div class="wizard-actions"><button class="wizard-back" type="button" data-back>← Back</button><button class="button button-green" type="button" data-next>Continue to contact <span aria-hidden="true">→</span></button></div>
+                <div class="wizard-actions"><button class="wizard-back" type="button" data-back><ArrowIcon direction="left" /> Back</button><button class="button button-green" type="button" data-next>Continue to contact <span aria-hidden="true"><ArrowIcon direction="right" /></span></button></div>
               </div>
 
               <div class="form-step" data-step="2" aria-labelledby="step-contact-title" hidden>
@@ -261,11 +262,11 @@ const questions = [
                 <div class="field"><label for="name">Your name <span class="required-label">(required)</span></label><input id="name" aria-describedby="name-error" name="name" type="text" autocomplete="name" placeholder="Your full name" required /><small class="field-error" id="name-error" role="status"></small></div>
                 <fieldset class="field"><legend>How should we contact you? <span class="required-label">(required)</span></legend><div class="choice-row"><label><input type="radio" name="contactMethod" value="Email" checked /> Email</label><label><input type="radio" name="contactMethod" value="Phone" /> Phone</label></div></fieldset>
                 <div class="field"><label for="contact" id="contact-label">Email address <span class="required-label">(required)</span></label><input id="contact" aria-describedby="contact-error" name="contact" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" required /><small class="field-error" id="contact-error" role="status"></small></div>
-                <div class="wizard-actions"><button class="wizard-back" type="button" data-back>← Back</button><button class="button button-green" type="submit">Preview your request <span aria-hidden="true">↗</span></button></div>
+                <div class="wizard-actions"><button class="wizard-back" type="button" data-back><ArrowIcon direction="left" /> Back</button><button class="button button-green" type="submit">Preview your request <span aria-hidden="true"><ArrowIcon direction="up-right" /></span></button></div>
                 <p class="form-disclaimer">UI preview only. Your enquiry won’t be sent yet.</p>
               </div>
             </form>
-            <div class="form-success" id="form-success" hidden tabindex="-1"><span class="success-mark" aria-hidden="true">✓</span><h3>Your plan request is ready.</h3><p>This is a preview of the form experience. No enquiry was sent.</p><div id="request-summary"></div><button type="button" id="start-again" class="button button-dark">Start a new request <span aria-hidden="true">↗</span></button></div>
+            <div class="form-success" id="form-success" hidden tabindex="-1"><span class="success-mark" aria-hidden="true">✓</span><h3>Your plan request is ready.</h3><p>This is a preview of the form experience. No enquiry was sent.</p><div id="request-summary"></div><button type="button" id="start-again" class="button button-dark">Start a new request <span aria-hidden="true"><ArrowIcon direction="up-right" /></span></button></div>
           </div>
         </div>
       </section>
@@ -284,7 +285,7 @@ const questions = [
             <article class="step"><span class="step-number">02</span><div class="step-rule"></div><h3>Explore your options</h3><p>We recommend a curated plant package suited to your conditions, style, and budget. You choose what feels right.</p></article>
             <article class="step"><span class="step-number">03</span><div class="step-rule"></div><h3>Find their place</h3><p>We plan placement around your layout and flow, with support to help your new plants settle in.</p></article>
           </div>
-          <a class="button button-cream" href="#enquiry">Let’s plan your space <span aria-hidden="true">↗</span></a>
+          <a class="button button-cream" href="#enquiry">Let’s plan your space <span aria-hidden="true"><ArrowIcon direction="up-right" /></span></a>
         </div>
       </section>
 
@@ -308,7 +309,7 @@ const questions = [
 
     </main>
 
-    <footer class="site-footer"><div class="container footer-inner"><div><a class="brand footer-brand" href="#top"><span class="brand-mark" aria-hidden="true"><span></span><span></span></span><span>plantliner<span class="brand-dot">.</span></span></a><p>The right fit for every plant need.</p></div><nav aria-label="Footer navigation"><a href="#solutions">Solutions</a><a href="#how-it-works">How it works</a><a href="#faq">FAQ</a><a href="#enquiry">Get in touch</a></nav></div><div class="container footer-bottom"><span>© {new Date().getFullYear()} Plantliner</span><span>Made for spaces that grow.</span><a href="#top">Back to top ↑</a></div></footer>
+    <footer class="site-footer"><div class="container footer-inner"><div><a class="brand footer-brand" href="#top"><span class="brand-mark" aria-hidden="true"><span></span><span></span></span><span>plantliner<span class="brand-dot">.</span></span></a><p>The right fit for every plant need.</p></div><nav aria-label="Footer navigation"><a href="#solutions">Solutions</a><a href="#how-it-works">How it works</a><a href="#faq">FAQ</a><a href="#enquiry">Get in touch</a></nav></div><div class="container footer-bottom"><span>© {new Date().getFullYear()} Plantliner</span><span>Made for spaces that grow.</span><a href="#top">Back to top <ArrowIcon direction="up" /></a></div></footer>
     <script>
       const menuButton = document.querySelector<HTMLButtonElement>('.menu-toggle');
       const mobileNav = document.querySelector<HTMLElement>('.mobile-nav');

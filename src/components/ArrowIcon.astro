@@ -1,0 +1,18 @@
+---
+// Tabler Icons arrow-right, MIT licensed. See THIRD_PARTY_NOTICES.md.
+interface Props {
+  direction?: 'right' | 'left' | 'up' | 'down' | 'up-right';
+}
+const { direction = 'right' } = Astro.props;
+const rotation = { right: 0, left: 180, up: -90, down: 90, 'up-right': -45 }[direction];
+---
+<svg class="arrow-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+  <g transform={`rotate(${rotation} 12 12)`}>
+    <path d="M5 12l14 0" />
+    <path d="M13 18l6 -6" />
+    <path d="M13 6l6 6" />
+  </g>
+</svg>
+<style>
+  .arrow-icon { display: inline-block; flex: none; vertical-align: middle; }
+</style>

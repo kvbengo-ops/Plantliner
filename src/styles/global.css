@@ -146,7 +146,22 @@ h2 { font-size: clamp(3rem, 5vw, 5.4rem); }
   .space-card { view-timeline: --slide x; }
   .space-card-surface { animation: slide-depth ease-in-out both; }
   .space-image img { animation: slide-parallax linear both; }
-  .space-card-surface, .space-image img { animation-timeline: --slide; animation-range: cover calc(50% - var(--card-width)) cover calc(50% + var(--card-width)); }
+  /* Copy rises in line by line as its card nears the middle: lower lines start later (smaller --reach), so they cascade. */
+  .space-copy > * { animation: copy-rise ease-in-out both; }
+  .space-copy > .card-link { animation-name: copy-fade; } /* fade only: a transform would shrink its card-wide hit area */
+  .space-copy > :nth-child(2) { --reach: .85; }
+  .space-copy > :nth-child(3) { --reach: .7; }
+  .space-copy > :nth-child(4) { --reach: .6; }
+  .space-copy > :nth-child(5) { --reach: .5; }
+  .space-card-surface, .space-image img, .space-copy > * { animation-timeline: --slide; animation-range: cover calc(50% - var(--card-width) * var(--reach, 1)) cover calc(50% + var(--card-width) * var(--reach, 1)); }
+}
+@keyframes copy-rise {
+  from, to { translate: 0 14px; opacity: .45; }
+  50% { translate: 0 0; opacity: 1; }
+}
+@keyframes copy-fade {
+  from, to { opacity: .45; }
+  50% { opacity: 1; }
 }
 @keyframes slide-depth {
   from { transform: perspective(1100px) translateY(16px) rotateY(-8deg) scale(.88); opacity: .54; }
@@ -179,16 +194,20 @@ h2 { font-size: clamp(3rem, 5vw, 5.4rem); }
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
   .space-card[data-active]:hover .space-image img { scale: 1.04; }
 }
-/* A small settle on the copy marks each new selection; interrupted transitions retarget. */
-.solutions-section[data-ready] .space-copy > * { transition: transform 250ms var(--ease-out), opacity 200ms ease; }
-.solutions-section[data-ready] .space-card:not([data-active]) .space-copy > * { opacity: .72; }
-/* The link only fades: a transform on it would shrink its card-wide hit area to the link itself. */
-.solutions-section[data-ready] .space-card:not([data-active]) .space-copy > :not(.card-link) { transform: translateY(6px); }
-.space-card[data-active] .space-copy > :nth-child(2) { transition-delay: 30ms; }
-.space-card[data-active] .space-copy > :nth-child(3) { transition-delay: 60ms; }
-.space-card[data-active] .space-copy > :nth-child(n+4) { transition-delay: 80ms; }
+/* Fallback without scroll-driven animations: a small settle on the copy marks each new selection. */
+@supports not (animation-timeline: view()) {
+  .solutions-section[data-ready] .space-copy > * { transition: transform 250ms var(--ease-out), opacity 200ms ease; }
+  .solutions-section[data-ready] .space-card:not([data-active]) .space-copy > * { opacity: .72; }
+  /* The link only fades: a transform on it would shrink its card-wide hit area to the link itself. */
+  .solutions-section[data-ready] .space-card:not([data-active]) .space-copy > :not(.card-link) { transform: translateY(6px); }
+  .space-card[data-active] .space-copy > :nth-child(2) { transition-delay: 30ms; }
+  .space-card[data-active] .space-copy > :nth-child(3) { transition-delay: 60ms; }
+  .space-card[data-active] .space-copy > :nth-child(n+4) { transition-delay: 80ms; }
+}
 @media (prefers-reduced-motion: reduce) {
   .solutions-section[data-ready] .space-card .space-copy > * { transform: none; transition-delay: 0ms; }
+  /* All animations are off here, so dim off-center cards directly. */
+  .solutions-section[data-ready] .space-card:not([data-active]) .space-card-surface { opacity: .54; }
 }
 @media (hover: hover) and (pointer: fine) {
   .slider-chip:hover, .card-link:hover { color: var(--leaf); }
