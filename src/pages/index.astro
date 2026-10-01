@@ -10,6 +10,19 @@ import school from '../assets/school.png';
 import retail from '../assets/retail.png';
 import '../styles/global.css';
 
+// Category photos live in public/images/categories/<slug>.jpg; photographer credits are in CREDITS.md.
+// `space` pre-selects that option in the enquiry form when the card is clicked.
+const categories = [
+  { name: 'Desk & Countertop', slug: 'desk-countertop', description: 'Perfect for personal workspaces and small office nooks.', alt: 'Small potted plants beside a notebook on a wooden desk' },
+  { name: 'Floor & Corner', slug: 'floor-corner', description: 'Fill empty spaces with durable, low-care life.', alt: 'Tall snake plant beside a table in a sunlit room corner' },
+  { name: 'Statement & Feature', slug: 'statement-feature', description: 'Make a lasting impression in lobbies and retail.', alt: 'Large potted palm trees in a bright modern lobby' },
+  { name: 'Low-Light Plants', slug: 'low-light-plants', description: 'Thrive in interior rooms with limited sunlight.', alt: 'Pothos and snake plants on a wooden shelf indoors' },
+  { name: 'Air-Purifying', slug: 'air-purifying', description: 'Clean air solutions for schools and busy offices.', alt: 'Peace lilies lined up along a window in a modern office' },
+  { name: 'Café Solutions', slug: 'cafe-solutions', space: 'cafe', description: 'Strategic greenery that supports your branding.', alt: 'Potted greenery arranged around a café counter and shelves' },
+  { name: 'Office Comfort', slug: 'office-comfort', space: 'office', description: 'Enhance employee focus with natural design.', alt: 'Potted plants around desks and workstations in an office' },
+  { name: 'Retail Branding', slug: 'retail-branding', space: 'retail', description: 'Durable setups designed for high-traffic areas.', alt: 'Potted plant displays along the aisle of a retail store' },
+];
+
 const spaces = [
   {
     name: 'Offices',
@@ -142,7 +155,7 @@ const questions = [
           </div>
           <div class="concept-copy">
             <p class="eyebrow green">Our way of thinking <span class="eyebrow-line"></span></p>
-            <h2 id="concept-title">Good greenery<br />starts with <em>getting<br />the space.</em></h2>
+            <h2 id="concept-title">Good greenery<br />starts with <em>getting</em><br /><em>the space.</em></h2>
             <p class="section-intro">A reception with no natural light? We start with the conditions, then choose plants that can genuinely thrive there.</p>
             <div class="concept-detail"><span>01 / The space</span><p>A front desk that greets every visitor, lit mainly by ceiling lights.</p></div>
             <div class="concept-detail"><span>02 / The response</span><p>Low-light ZZ and snake plants frame the desk while keeping the entrance clear.</p></div>
@@ -193,6 +206,32 @@ const questions = [
           </div>
           <div class="slider-footer"><span class="slider-hint">Swipe or drag to explore</span><p class="slider-status" aria-live="polite" aria-atomic="true">01 / 04 - Offices</p></div>
           <p class="photo-note">Imagery is illustrative of possible plant styling, not completed Plantliner projects.</p>
+        </div>
+      </section>
+
+      <section class="section categories-section" id="categories" aria-labelledby="categories-title">
+        <div class="container">
+          <div class="section-heading categories-heading">
+            <div>
+              <p class="eyebrow green">Browse by type <span class="eyebrow-line"></span></p>
+              <h2 id="categories-title">Plant <em>Categories</em></h2>
+            </div>
+          </div>
+          <ul class="category-grid">
+            {categories.map((category) => (
+              <li>
+                <a class="category-card" href="#enquiry" data-space={category.space}>
+                  <div class="category-image">
+                    <SpaceIcon variant="leaf" />
+                    {/* Removed if the photo is missing, so the leaf placeholder shows instead of a broken image. */}
+                    <img src={`/images/categories/${category.slug}.jpg`} alt={category.alt} width="800" height="600" loading="lazy" decoding="async" onerror="this.remove()" />
+                  </div>
+                  <h3>{category.name}</h3>
+                  <p>{category.description}</p>
+                </a>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
@@ -491,9 +530,16 @@ const questions = [
             revealObserver.unobserve(el);
           });
         }, { rootMargin: '0px 0px -10% 0px' });
-        const revealTargets = [...document.querySelectorAll<HTMLElement>('.principles-inner > div, .image-badge, .concept-copy > *, .solutions-heading > *, .slider-controls, .space-grid, .process-top > *, .step, .faq-heading > *, .faq-list details, .enquiry-copy > *, .form-panel')]
+        const revealTargets = [...document.querySelectorAll<HTMLElement>('.principles-inner > div, .image-badge, .concept-copy > *, .solutions-heading > *, .slider-controls, .space-grid, .categories-heading > *, .category-grid > li, .process-top > *, .step, .faq-heading > *, .faq-list details, .enquiry-copy > *, .form-panel')]
           .filter((el) => el.getBoundingClientRect().top > innerHeight); // all reads before any writes
-        revealTargets.forEach((el) => { el.setAttribute('data-pending', ''); revealObserver.observe(el); });
+        revealTargets.forEach((el) => {
+          // Headings rise line by line: wrap each <br>-separated line in a span the CSS staggers by --i.
+          // The space between spans keeps words apart where the lines flow inline (concept heading on mobile).
+          const heading = el.matches('h2') ? el : el.querySelector('h2');
+          if (heading) heading.innerHTML = heading.innerHTML.split(/<br\b[^>]*>/i).map((line, i) => `<span class="heading-line" style="--i: ${i}">${line}</span>`).join(' ');
+          el.setAttribute('data-pending', '');
+          revealObserver.observe(el);
+        });
       }
 
       const form = document.querySelector<HTMLFormElement>('#plant-plan-form');
@@ -634,4 +680,3 @@ const questions = [
     </script>
   </body>
 </html>
-

@@ -138,8 +138,10 @@ h2 { font-size: clamp(3rem, 5vw, 5.4rem); }
 .space-grid.is-dragging, .space-grid.is-dragging * { cursor: grabbing; }
 /* The outer slide stays fixed for snap geometry; its surface supplies the depth. */
 .space-card { position: relative; display: flex; flex: 0 0 var(--card-width); min-width: 0; scroll-snap-align: center; scroll-snap-stop: always; }
-.space-card-surface { position: relative; display: grid; grid-template-columns: 1.15fr 1fr; width: 100%; overflow: hidden; border: 1px solid #ffffffc7; border-radius: 16px; background: linear-gradient(145deg, #fffffb, #f0f2e9); box-shadow: 0 2px 3px #263e2d0a, 0 10px 18px -10px #263e2d33, 0 28px 40px -22px #263e2d52; transform-origin: center; }
-.space-card-surface::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px #263e2d08, inset 0 1px 0 #ffffffb3; pointer-events: none; }
+/* One card surface, shared by the carousel slides and the category cards. */
+.space-card-surface, .category-card { position: relative; overflow: hidden; border: 1px solid #ffffffc7; border-radius: 16px; background: linear-gradient(145deg, #fffffb, #f0f2e9); box-shadow: 0 2px 3px #263e2d0a, 0 10px 18px -10px #263e2d33, 0 28px 40px -22px #263e2d52; }
+.space-card-surface { display: grid; grid-template-columns: 1.15fr 1fr; width: 100%; transform-origin: center; }
+.space-card-surface::after, .category-card::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px #263e2d08, inset 0 1px 0 #ffffffb3; pointer-events: none; }
 .solutions-section[data-ready] .space-card:not([data-active]) { cursor: pointer; }
 .space-card:focus-within .space-card-surface { outline: 2px solid var(--leaf); outline-offset: 3px; }
 /* Depth tracks the scroll on the compositor, so it never lags a swipe. Full effect one card-width off center, flat in the middle. */
@@ -218,6 +220,24 @@ h2 { font-size: clamp(3rem, 5vw, 5.4rem); }
   .slider-arrow:not([aria-disabled='true']):hover { background: var(--forest); color: white; }
 }
 .photo-note { margin: 20px 0 0; color: var(--muted); font-size: .69rem; }
+
+.categories-section { background: var(--cream); }
+.category-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 40px 28px; margin: 0; padding: 0; list-style: none; }
+/* Eight cards side by side: a soft shadow instead of the carousel's deep hero shadow, which smudged between rows. */
+.category-card { display: flex; flex-direction: column; height: 100%; box-shadow: 0 1px 2px #263e2d0d, 0 14px 28px -18px #263e2d38; transition: transform 250ms var(--ease-out), box-shadow 250ms var(--ease-out), scale 160ms var(--ease-out); touch-action: manipulation; }
+/* Placeholder (soft green + leaf) sits under the photo, so it shows until a photo is added. */
+.category-image { position: relative; display: grid; place-items: center; aspect-ratio: 3 / 2; background: #e4eadc; color: #7f9877; }
+/* The stock photos range from glaring white rooms to near-black ones; one gentle grade pulls them onto the site's warm palette. */
+.category-image img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: contrast(.9) saturate(.82) sepia(.08); }
+.category-card h3 { margin: 20px 22px 8px; font-family: 'DM Serif Display', Georgia, serif; font-size: 1.45rem; line-height: 1.15; letter-spacing: -.01em; }
+.category-card p { margin: 0 22px 24px; color: #616b5f; font-size: .86rem; line-height: 1.65; }
+.category-card:active { scale: .985; }
+@media (hover: hover) and (pointer: fine) {
+  .category-card:hover { box-shadow: 0 2px 4px #263e2d0f, 0 22px 36px -20px #263e2d4d; }
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .category-card:hover { transform: translateY(-4px); }
+}
 
 .process-section { background: #263e2d; color: #f5f4ed; }
 .process-top { display: flex; align-items: end; justify-content: space-between; gap: 60px; }
@@ -397,6 +417,7 @@ fieldset.field { min-width: 0; margin-inline: 0; padding: 0; border: 0; }
   .concept-grid { gap: 55px; }
   .concept-image-wrap, .concept-image-wrap > img { min-height: 560px; height: 560px; }
   .space-grid { --gutter: 24px; }
+  .category-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 24px; }
   .enquiry-grid { grid-template-columns: .7fr 1.3fr; gap: 32px; }
   #plant-plan-form { padding-inline: 32px; }
 }
@@ -434,6 +455,7 @@ fieldset.field { min-width: 0; margin-inline: 0; padding: 0; border: 0; }
   .image-badge { left: -8px; bottom: 15px; font-size: 1.1rem; }
   .concept-copy { padding: 0; }
   .concept-copy h2 br { display: none; }
+  .concept-copy h2 .heading-line { display: inline; } /* flows like the hidden <br>s; lines still fade in turn */
   .section-heading, .process-top { display: block; }
   .section-heading > p, .process-top > p { max-width: 490px; margin-top: 20px; }
   .space-grid { --gutter: max(18px, (100vw - 600px) / 2); --card-width: min(84vw, 400px); gap: 12px; padding-block: 16px 36px; }
@@ -474,6 +496,12 @@ fieldset.field { min-width: 0; margin-inline: 0; padding: 0; border: 0; }
   .solutions-section .section-heading h2 { font-size: clamp(2.5rem, 10.5vw, 3.6rem); }
   .solutions-section .section-heading > p { font-size: .88rem; line-height: 1.65; }
   .space-grid { --card-width: min(86vw, 400px); gap: 10px; }
+  /* Phones: a compact list, thumbnail beside the text, instead of eight full-width photos in a row. */
+  .category-grid { grid-template-columns: 1fr; gap: 12px; }
+  .category-card { display: grid; grid-template-columns: 112px 1fr; grid-template-rows: 1fr auto auto 1fr; border-radius: 12px; }
+  .category-image { grid-row: 1 / -1; aspect-ratio: auto; min-height: 112px; }
+  .category-card h3 { grid-row: 2; margin: 14px 16px 4px; font-size: 1.2rem; }
+  .category-card p { grid-row: 3; margin: 0 16px 14px; font-size: .8rem; line-height: 1.5; }
   .space-copy { padding: 18px; }
   .space-copy h3 { font-size: clamp(1.7rem, 8vw, 2rem); }
   .space-copy > p { font-size: .82rem; line-height: 1.6; }
@@ -515,6 +543,11 @@ fieldset.field { min-width: 0; margin-inline: 0; padding: 0; border: 0; }
 [data-in] { animation: rise-in 400ms var(--ease-out) backwards; animation-delay: var(--delay, 0ms); }
 .image-badge[data-in] { animation-delay: 400ms; }
 .step[data-in] .step-rule::after { animation: draw-x 600ms var(--ease-in-out) backwards; animation-delay: calc(var(--delay, 0ms) + 200ms); }
+/* Headings rise in line by line (index.astro wraps each line in .heading-line); the eyebrow rule draws in alongside. */
+.heading-line { display: block; }
+[data-in] .heading-line { animation: rise-line 700ms var(--ease-out) backwards; animation-delay: calc(var(--delay, 0ms) + var(--i, 0) * 110ms); }
+@keyframes rise-line { from { opacity: 0; transform: translateY(.45em); } }
+[data-in] .eyebrow-line { animation: draw-x 600ms var(--ease-in-out) backwards; animation-delay: calc(var(--delay, 0ms) + 150ms); }
 .hero-content > :nth-child(2) { animation-delay: 60ms; }
 .hero-content > :nth-child(3) { animation-delay: 120ms; }
 .hero-content > :nth-child(4) { animation-delay: 180ms; }
