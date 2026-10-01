@@ -92,7 +92,8 @@ h2 { font-size: clamp(3rem, 5vw, 5.4rem); }
 .principles-inner { display: grid; grid-template-columns: repeat(3, 1fr); min-height: 98px; align-items: center; }
 .principles-inner > div { display: flex; align-items: center; justify-content: center; gap: 18px; min-height: 40px; color: #485447; font-size: .82rem; font-weight: 600; }
 .principles-inner > div + div { border-left: 1px solid #cbd3c7; }
-.principle-icon { display: inline-grid; width: 30px; height: 30px; place-items: center; color: #67825f; font-size: 1.7rem; font-weight: 400; }
+.principle-icon { display: inline-grid; width: 30px; height: 30px; place-items: center; color: #67825f; }
+.principle-icon svg { width: 24px; height: 24px; }
 
 .concept-section { background: var(--cream); }
 .concept-grid { display: grid; grid-template-columns: 1.02fr .98fr; align-items: center; gap: clamp(60px, 8vw, 142px); }
@@ -411,14 +412,14 @@ fieldset.field { min-width: 0; margin-inline: 0; padding: 0; border: 0; }
   .mobile-nav[hidden] { opacity: 0; transform: translateY(-8px); }
   @starting-style { .mobile-nav { opacity: 0; transform: translateY(-8px); } }
   .mobile-nav a { display: flex; align-items: center; min-height: 44px; }
-  .hero, .hero-inner { min-height: 740px; }
-  .hero-image { inset: auto 0 0; width: 100%; height: 54%; object-position: 65% center; }
-  .hero-shade { background: linear-gradient(180deg, #f5f4ed 0%, #f5f4ed 40%, rgba(245,244,237,.1) 68%, transparent 100%); }
-  .hero-inner { justify-content: flex-start; }
-  .hero-content { padding: 58px 0 0; }
-  .hero h1 { font-size: clamp(3.6rem, 11vw, 5rem); }
+  /* Stacked, not overlaid: text on cream, then the photo below it, so neither covers the other at any phone height. */
+  .hero { display: flex; flex-direction: column; min-height: 0; background: var(--cream); }
+  .hero-inner { min-height: 0; justify-content: flex-start; }
+  .hero-image { position: static; order: 1; width: 100%; height: clamp(240px, 68vw, 420px); object-position: 65% center; -webkit-mask-image: linear-gradient(transparent, #000 22%); mask-image: linear-gradient(transparent, #000 22%); }
+  .hero-shade, .hero-caption { display: none; }
+  .hero-content { padding: 58px 0 36px; }
+  .hero h1 { font-size: clamp(3.6rem, 11vw, 5rem); text-wrap: balance; }
   .hero-description { max-width: 510px; font-size: .9rem; line-height: 1.6; }
-  .hero-caption { right: 0; bottom: 20px; max-width: 220px; font-size: .6rem; text-align: right; }
   .principles-inner { grid-template-columns: 1fr; padding: 15px 0; }
   .principles-inner > div { justify-content: start; min-height: 45px; font-size: .78rem; }
   .principles-inner > div + div { border-left: 0; }
@@ -461,9 +462,9 @@ fieldset.field { min-width: 0; margin-inline: 0; padding: 0; border: 0; }
 }
 
 @media (max-width: 520px) {
-  .hero, .hero-inner { min-height: 730px; }
   .hero-content { padding-top: 42px; }
-  .hero h1 { margin-bottom: 20px; font-size: clamp(3.2rem, 12.5vw, 4.2rem); }
+  /* "for the right space." measures ~7.5em: 11.2vw keeps it on one line down to 320px wide. */
+  .hero h1 { margin-bottom: 20px; font-size: clamp(2.2rem, 11.2vw, 4.2rem); }
   .solutions-section .section-heading { margin-bottom: 28px; }
   .solutions-section .section-heading h2 { font-size: clamp(2.5rem, 10.5vw, 3.6rem); }
   .solutions-section .section-heading > p { font-size: .88rem; line-height: 1.65; }
@@ -476,7 +477,6 @@ fieldset.field { min-width: 0; margin-inline: 0; padding: 0; border: 0; }
   .slider-footer { font-size: .64rem; }
   .hero-description { margin-bottom: 21px; }
   .hero-actions { align-items: flex-start; flex-direction: column; gap: 11px; }
-  .hero-caption { display: none; }
   .space-copy > p { margin-bottom: 14px; }
   .concept-detail { grid-template-columns: 1fr; gap: 5px; }
   #plant-plan-form { padding: 29px 22px 30px; }

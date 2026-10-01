@@ -2,11 +2,11 @@
 
 ## Tabler Icons
 
-The arrow icon in `src/components/ArrowIcon.astro` is adapted from [Tabler Icons](https://github.com/tabler/tabler-icons).
+The arrow icon in `src/components/ArrowIcon.astro` and the sun, layout-grid and droplet icons in the principles strip of `src/pages/index.astro` are adapted from [Tabler Icons](https://github.com/tabler/tabler-icons).
 
 MIT License
 
-Copyright (c) 2020-2026 Pawe? Kuna
+Copyright (c) 2020-2026 Paweł Kuna
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
