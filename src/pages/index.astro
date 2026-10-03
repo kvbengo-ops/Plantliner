@@ -122,7 +122,7 @@ const questions = [
 
     <main id="main">
       <section class="hero" aria-labelledby="hero-title">
-        <Image class="hero-image" src={hero} alt="Sunlit commercial lounge with thoughtfully arranged indoor plants" width={1800} widths={[640, 1080, 1800]} sizes="(max-width: 760px) 100vw, (max-width: 1100px) 78vw, 72vw" format="webp" loading="eager" fetchpriority="high" />
+        <Image class="hero-image" src={hero} alt="Sunlit commercial lounge with thoughtfully arranged indoor plants" width={1800} widths={[640, 1080, 1800]} sizes="(max-width: 760px) calc(100vw - 36px), 47vw" format="webp" loading="eager" fetchpriority="high" />
         <div class="hero-shade"></div>
         <div class="container hero-inner">
           <div class="hero-content">
@@ -133,6 +133,7 @@ const questions = [
               <a class="button button-green" href="#enquiry">Request a plant plan <span aria-hidden="true"><ArrowIcon direction="up-right" /></span></a>
               <a class="text-link" href="#solutions">Explore solutions <span aria-hidden="true"><ArrowIcon direction="down" /></span></a>
             </div>
+            <p class="hero-note">Your light. Your layout. A plan that belongs.</p>
           </div>
           <div class="hero-caption"><span class="caption-line"></span> Spaces feel better with plants that belong.</div>
         </div>
@@ -213,21 +214,25 @@ const questions = [
         <div class="container">
           <div class="section-heading categories-heading">
             <div>
-              <p class="eyebrow green">Browse by type <span class="eyebrow-line"></span></p>
-              <h2 id="categories-title">Plant <em>Categories</em></h2>
+              <p class="eyebrow green">Plant categories <span class="eyebrow-line"></span></p>
+              <h2 id="categories-title">Find your kind<br />of <em>green.</em></h2>
             </div>
+            <p>Start with a spot to fill or a feeling to create. Choose a category to begin your plant plan.</p>
           </div>
           <ul class="category-grid">
             {categories.map((category) => (
               <li>
-                <a class="category-card" href="#enquiry" data-space={category.space}>
+                <a class="category-card" href="#enquiry" data-space={category.space} aria-label={`Start a plant plan: ${category.name}`}>
                   <div class="category-image">
                     <SpaceIcon variant="leaf" />
                     {/* Removed if the photo is missing, so the leaf placeholder shows instead of a broken image. */}
                     <img src={`/images/categories/${category.slug}.jpg`} alt={category.alt} width="800" height="600" loading="lazy" decoding="async" onerror="this.remove()" />
                   </div>
-                  <h3>{category.name}</h3>
-                  <p>{category.description}</p>
+                  <div class="category-content">
+                    <h3>{category.name}</h3>
+                    <p>{category.description}</p>
+                    <span class="category-action">Plan my space <span class="category-arrow"><ArrowIcon direction="up-right" /></span></span>
+                  </div>
                 </a>
               </li>
             ))}
@@ -411,8 +416,8 @@ const questions = [
               // ponytail: fallback for browsers without scroll-driven animations (Firefox); lags the scroll by a frame
               const position = Math.max(-1, Math.min(1, positions[i] / spacing));
               const distance = Math.abs(position);
-              surfaces[i].style.transform = reduceMotion.matches ? 'none' : `perspective(1100px) translate3d(0, ${distance * 16}px, 0) rotateY(${-position * 8}deg) scale(${1 - distance * .12})`;
-              surfaces[i].style.opacity = String(1 - distance * .46);
+              surfaces[i].style.transform = reduceMotion.matches ? 'none' : `translate3d(0, ${distance * 6}px, 0) scale(${1 - distance * .04})`;
+              surfaces[i].style.opacity = String(1 - distance * .25);
               photos[i].style.transform = reduceMotion.matches ? 'none' : `translate3d(${position * -12}px, 0, 0) scale(1.08)`;
             }
             card.toggleAttribute('data-active', i === active);
@@ -457,12 +462,12 @@ const questions = [
         next.addEventListener('click', () => goTo((navigating ? requested : active) + 1));
         track.addEventListener('keydown', (event) => {
           if (event.target !== track) return;
-          // Same glide as the arrow buttons (reduced motion makes it instant via CSS scroll-behavior); key repeat stacks like rapid clicks.
+          // Keyboard navigation responds immediately; pointer controls retain their glide.
           const from = navigating ? requested : active;
           const index = { ArrowLeft: from - 1, ArrowRight: from + 1, Home: count, End: count * 2 - 1 }[event.key];
           if (index === undefined) return;
           event.preventDefault();
-          goTo(index);
+          goTo(index, true);
         });
 
         let drag: { x: number; left: number; index: number } | undefined;
@@ -520,7 +525,8 @@ const questions = [
 
       // Scroll reveal, once per element. Only content below the fold at load is hidden,
       // so nothing the reader can already see disappears, and no-JS/reduced-motion just shows everything.
-      if (!matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObserver' in window) {
+      const motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
+      if (!motionPreference.matches && 'IntersectionObserver' in window) {
         const revealObserver = new IntersectionObserver((entries) => {
           entries.filter((entry) => entry.isIntersecting).forEach((entry, i) => {
             const el = entry.target as HTMLElement;
@@ -532,6 +538,11 @@ const questions = [
         }, { rootMargin: '0px 0px -10% 0px' });
         const revealTargets = [...document.querySelectorAll<HTMLElement>('.principles-inner > div, .image-badge, .concept-copy > *, .solutions-heading > *, .slider-controls, .space-grid, .categories-heading > *, .category-grid > li, .process-top > *, .step, .faq-heading > *, .faq-list details, .enquiry-copy > *, .form-panel')]
           .filter((el) => el.getBoundingClientRect().top > innerHeight); // all reads before any writes
+        motionPreference.addEventListener('change', () => {
+          if (!motionPreference.matches) return;
+          revealObserver.disconnect();
+          revealTargets.forEach((el) => el.removeAttribute('data-pending'));
+        });
         revealTargets.forEach((el) => {
           // Headings rise line by line: wrap each <br>-separated line in a span the CSS staggers by --i.
           // The space between spans keeps words apart where the lines flow inline (concept heading on mobile).
@@ -563,7 +574,7 @@ const questions = [
           else item.removeAttribute('aria-current');
         });
         if (stepCount) stepCount.textContent = `0${step + 1} / 03`;
-        if (progressFill) progressFill.style.width = `${((step + 1) / formSteps.length) * 100}%`;
+        if (progressFill) progressFill.style.transform = `scaleX(${(step + 1) / formSteps.length})`;
         if (focus) formSteps[step]?.querySelector<HTMLElement>('h3')?.focus();
       };
 
