@@ -88,6 +88,11 @@ test('the request is catalog data plus fixed text, with the room as an image', (
   assert.match(text.text, /floor, corner, window, desk, cabinet, entrance/); // never "auto"
   assert.doesNotMatch(text.text, /armchair|sofa|couch/i); // a concrete example gets copied even when the photo has none
   assert.match(text.text, /that you can actually see/);
+  // The first real run (office, Japandi) came back with "keep the desks centered" notes and nothing moved.
+  assert.match(text.text, /between 2 and 6 notes/);
+  assert.match(text.text, /start with a verb such as Move, Turn, Rotate/);
+  assert.match(text.text, /Never write a note that keeps something where it is/);
+  assert.match(text.text, /professional space planner/);
 });
 
 const realFetch = globalThis.fetch;
