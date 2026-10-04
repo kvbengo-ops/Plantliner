@@ -1,0 +1,21 @@
+{
+  "name": "plantliner-functions",
+  "private": true,
+  "type": "module",
+  "main": "lib/index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "build": "node -e \"require('fs').copyFileSync('../src/data/catalog.json', 'src/catalog.json')\" && tsc",
+    "test": "npm run build && node --test \"lib/**/*.test.js\""
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.0",
+    "firebase-functions": "^7.4.0"
+  }
+}

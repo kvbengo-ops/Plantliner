@@ -20,15 +20,18 @@
 | Decision | Default in this plan | Where to change it |
 |---|---|---|
 | What the result page leads to | **"Request this plant"** pre-fills the existing enquiry form. No cart exists yet; building one is a separate project. | `#viz-request` link (Task 8), prefill (Task 9) |
-| Access | Anonymous, with daily caps: **50/day in total, 5/day per IP** | `DAILY_CAP`, `IP_CAP` in `functions/src/index.ts` |
+| Access | Anonymous, with daily caps: **20/day in total, 5/day per IP** | `DAILY_CAP`, `IP_CAP` in active `api/_lib/handlers.ts` |
 | Space types | office, café, school, retail, other: the site's existing set and `SpaceIcon` variants | `spaceTypes` in `src/data/catalog.json`, plus a path in `SpaceIcon.astro` |
 | Prices | Not shown (the site has none) | Add `price` to catalog plants and the result card |
 | Region | us-central1 (Firebase default, simplest Hosting rewrite) | `region` in `onRequest` options and in the `firebase.json` rewrite |
 | AI model | `google/nano-banana-edit`, unless Task 0 says otherwise | `MODEL` in `imageProvider.ts` |
+| Output shape | The allowed ratio nearest the room photo's own shape, never `auto` (G0 run 1: a landscape room came back as a portrait image) | `nearestRatio` in `functions/src/rules.ts` |
 | Webhook | None. The function polls Kie whenever the browser polls the function ("poll-through"). | `ponytail:` comment in Task 7 |
 | Captcha | Not in the MVP. The global cap already bounds spend; a captcha protects availability, not cost. *(Revised from the report.)* | Add Cloudflare Turnstile when non-customers start exhausting the daily cap |
 | Environments | One Firebase project. `npm run dev` uses the deployed API. | Add a staging project when a second developer or real traffic arrives |
 | Retention | Visualizations (record and images) are deleted after 30 days. Enquiries are kept. | Task 11 |
+| Site host *(decided 2026-10-04)* | **The site is on Vercel, not Firebase Hosting.** Firebase hosts only the `api` function, Firestore and Storage. A Vercel rewrite sends `/api/*` to the function's Cloud Run URL, so the browser still sees one origin. Task 3's Hosting parts (`hosting` block in `firebase.json`, `.web.app` URLs, the 404 skeleton) are superseded. `SITE_URL` (a function param) is the Vercel site, where Kie downloads plant photos; `API_ORIGIN` in `.env` is the dev proxy target. | `vercel.json` (added after the first deploy), `SITE_URL`, `astro.config.mjs` |
+| Backend host *(revised 2026-10-04, supersedes the Firebase rows above)* | **Card trouble ruled out Firebase (Blaze).** The API is Vercel Functions in `api/` (same origin, no rewrite). Records, private image storage and the daily-cap/refund logic are **Supabase** (free plan): tables and functions in `supabase/migrations/0001_init.sql`. A daily Vercel cron (`api/cron/cleanup`) does the 30-day retention and keeps the free project from pausing. Secrets are Vercel environment variables (`KIE_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`). `functions/`, `firebase.json`, `firestore.rules` and `storage.rules` are the superseded Firebase attempt, to be deleted once the Supabase path is verified. | `api/_lib/db.ts`, `api/_lib/handlers.ts`, `vercel.json` |
 
 ## Architecture
 
@@ -79,11 +82,11 @@ flowchart TD
     E --> F["POST /api/visualizations"]
     F --> G{"Valid input?"}
     G -- "no" --> G1["400 + message"] --> D
-    G -- "yes" --> H{"Under daily caps?<br/>50 total · 5 per IP"}
+    G -- "yes" --> H{"Under daily caps?<br/>20 total · 5 per IP"}
     H -- "no" --> H1["429: limit reached"]
     H -- "yes" --> I["Save room.jpg to Storage"]
     I --> J["buildPrompt() from catalog values only"]
-    J --> K["imageProvider.createTask()<br/>room signed URL + plant photo URL"]
+    J --> K["imageProvider.createTask()<br/>room signed URL + plant photo URL<br/>+ ratio nearest the room photo"]
     K -- "error" --> K1["Record failed · refund IP slot · 502"]
     K -- "taskId" --> L["Firestore record: status = processing"]
     L --> M["URL becomes /visualize/?id=…<br/>browser polls GET every 3 s"]
@@ -143,7 +146,7 @@ flowchart LR
 ## Global Constraints
 
 - Astro stays static: no SSR adapter, no `output: 'server'`.
-- No new frontend dependencies. The only backend dependencies are `firebase-functions` and `firebase-admin`, plus `typescript@5` as a dev dependency.
+- No new frontend dependencies. The only backend dependencies are `firebase-functions` and `firebase-admin`, plus `typescript@5` and `@types/node@22` as dev dependencies.
 - Functions are ESM on Node 22: `"type": "module"`, `"engines": { "node": "22" }`, compiled by `tsc` to `functions/lib/`.
 - The Kie key lives only in Secret Manager as `KIE_API_KEY`: never in Astro code, `.env` files or git.
 - **Upload format:**
@@ -151,7 +154,7 @@ flowchart LR
   - The server accepts JPEG only, max **8 MB** decoded.
   - The visualizer accepts JPG/PNG/WebP input up to **25 MB** before re-encoding. The enquiry form keeps its existing 10 MB limit.
 - The prompt is built only from catalog values. No customer free text reaches the AI.
-- Always send `image_size: 'auto'` to Kie. Its default, `1:1`, crops the room.
+- Never send `image_size: 'auto'` to Kie. G0 run 1 showed it can follow the plant photo's shape: a landscape (~4:3) room came back as an 864×1184 portrait with its right side cut off. Send the allowed ratio nearest to the room photo's own shape (`nearestRatio` in `rules.ts`, passed to `createTask` as `aspect`). G0 run 2 confirmed this keeps the framing: the same room with `4:3` came back 1184×864.
 - Plants are referenced by `productId`, which is the catalog `id`. Visualization records store `items: [{ productId, quantity }]`.
 - Wherever a result is shown, it is labelled as an approximate AI visualization.
 - Anyone with a `/visualize/?id=…` link can view that result, and the page says so.
@@ -162,7 +165,7 @@ flowchart LR
 ## Review Focus
 
 1. **Double-clicking "Create my preview"** must cause exactly one paid generation. Manual check pinned in Task 8, Step 7.
-2. **Awkward photos:** one the browser can't decode, one over 25 MB, and a portrait phone photo. Each should give a friendly error, a rejection, or an upright image respectively. Pinned in Task 8, Step 7.
+2. **Awkward photos:** one the browser can't decode, one over 25 MB, and a portrait phone photo. Each should give a friendly error, a rejection, or an upright image whose result stays portrait, respectively. Pinned in Task 8, Step 7.
 3. **Reloading or reopening `/visualize/?id=…` mid-generation** must resume and show the result. Pinned in Task 8, Step 7.
 4. **Daily cap reached:** the customer sees a clear "limit reached" message and no generation starts. Pinned in Task 7, Step 7.
 5. **Kie reports success but returns no image URL:** treat it as a failure, not an endless spinner. Unit test in Task 6.
@@ -172,6 +175,8 @@ flowchart LR
 ### Task 0: Prove the AI output is good enough (gate)
 
 Nothing in this task touches the repo. If the output isn't good enough, stop here; nothing else is worth building.
+
+> **Update from the first two real runs (2026-10-03):** the script actually used lives in `C:\Users\Asus\kie-spike\` (see the task board), not in the snippet below. It supports a per-room `imageSize`. With `auto`, a landscape room came back as a portrait image with the room re-cropped; with `4:3` the framing held. Tasks 4, 6 and 7 below now send an explicit ratio.
 
 **Files:**
 - Create (outside the repo, e.g. `~/kie-spike/`): `kie-spike.mjs`, `spike.json`
@@ -227,7 +232,7 @@ for (const room of rooms) {
     const created = await (await fetch(`${api}/createTask`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ model, input: { prompt: prompt(plant), image_urls: [room, plant.url], output_format: 'png', image_size: 'auto' } }),
+      body: JSON.stringify({ model, input: { prompt: prompt(plant), image_urls: [room, plant.url], output_format: 'png', image_size: '4:3' /* your rooms' own ratio, never 'auto' */ } }),
     })).json();
     if (created.code !== 200) { console.log('createTask failed:', created); continue; }
     const started = Date.now();
@@ -467,8 +472,8 @@ git commit -m "Extract shared page layout"
 }
 ```
 
-Run: `npm --prefix functions install -D typescript@5`
-Expected: `functions/node_modules/` exists and `typescript` appears under `devDependencies`.
+Run: `npm --prefix functions install -D typescript@5 @types/node@22`
+Expected: `functions/node_modules/` exists, and `typescript` and `@types/node` appear under `devDependencies`. Without `@types/node` the first compile fails with `Cannot find module 'node:test'`.
 
 - [ ] **Step 2: Write the failing test `functions/src/catalog.test.ts`**
 
@@ -731,9 +736,11 @@ git commit -m "Wire Firebase Functions behind /api"
   - Types:
     - `Parsed<T> = { ok: true; value: T } | { ok: false; error: string }`
     - `Dims = { widthM?: number; lengthM?: number; ceilingM?: number }`
-    - `VisualizationInput = { image: Buffer; space: Option; plant: Plant; style: Option; placement: Option; dims: Dims }`
+    - `VisualizationInput = { image: Buffer; space: Option; plant: Plant; style: Option; placement: Option; dims: Dims; aspect: string }`, where `aspect` is the Kie ratio nearest the photo's own shape
   - Functions:
     - `parseImage(base64: unknown): Parsed<Buffer>`
+    - `jpegSize(image: Buffer): { width: number; height: number } | null`, read from the JPEG's frame header
+    - `nearestRatio(width: number, height: number): string`, one of Kie's ratios (never `auto`)
     - `parseVisualizationRequest(body: unknown): Parsed<VisualizationInput>`, where the body is `{ image, spaceType, productId, style, placement, dims? }`
     - `nextStep(v: { status: string; createdAt: number; checkedAt: number }, now: number): 'done' | 'timeout' | 'check' | 'wait'`
 
@@ -742,9 +749,12 @@ git commit -m "Wire Firebase Functions behind /api"
 ```ts
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseVisualizationRequest, nextStep, MAX_IMAGE_BYTES } from './rules.js';
+import { parseVisualizationRequest, nextStep, jpegSize, nearestRatio, MAX_IMAGE_BYTES } from './rules.js';
 
-const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0]).toString('base64');
+// A minimal JPEG: the start marker, one frame header (SOF0) carrying the size, and the end marker.
+const jpegOf = (width: number, height: number) =>
+  Buffer.from([0xff, 0xd8, 0xff, 0xc0, 0x00, 0x11, 0x08, height >> 8, height & 255, width >> 8, width & 255, 0x03, 0x01, 0x22, 0x00, 0x02, 0x11, 0x01, 0x03, 0x11, 0x01, 0xff, 0xd9]);
+const jpeg = jpegOf(1200, 896).toString('base64');
 const valid = { image: jpeg, spaceType: 'office', productId: 'snake-plant', style: 'japandi', placement: 'auto' };
 
 test('accepts a valid request and resolves catalog entries', () => {
@@ -753,6 +763,7 @@ test('accepts a valid request and resolves catalog entries', () => {
   assert.equal(result.value.plant.id, 'snake-plant');
   assert.equal(result.value.style.id, 'japandi');
   assert.deepEqual(result.value.dims, {});
+  assert.equal(result.value.aspect, '4:3');
 });
 
 test('rejects anything outside the catalog', () => {
@@ -777,6 +788,21 @@ test('keeps sensible room sizes and rejects silly ones', () => {
   assert.deepEqual(result.value.dims, { widthM: 6, ceilingM: 2.7 });
   assert.equal(parseVisualizationRequest({ ...valid, dims: { ceilingM: 300 } }).ok, false);
   assert.equal(parseVisualizationRequest({ ...valid, dims: { widthM: '6' } }).ok, false);
+});
+
+test("matches the output to the room photo's own shape, and rejects photos with no readable size", () => {
+  assert.deepEqual(jpegSize(jpegOf(1200, 896)), { width: 1200, height: 896 });
+  assert.equal(nearestRatio(1200, 896), '4:3'); // landscape stays landscape (G0 run 1: 'auto' returned a portrait)
+  assert.equal(nearestRatio(896, 1200), '3:4');
+  assert.equal(nearestRatio(1920, 1080), '16:9');
+  assert.equal(nearestRatio(3000, 1000), '21:9');
+  const portrait = parseVisualizationRequest({ ...valid, image: jpegOf(900, 1600).toString('base64') });
+  assert.ok(portrait.ok);
+  assert.equal(portrait.value.aspect, '9:16');
+  // A JPEG signature with no frame header, or a zero-sized one, cannot be shown to the model.
+  const noFrame = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0]).toString('base64');
+  assert.equal(parseVisualizationRequest({ ...valid, image: noFrame }).ok, false);
+  assert.equal(parseVisualizationRequest({ ...valid, image: jpegOf(0, 0).toString('base64') }).ok, false);
 });
 
 test('asks the provider at most every 5 s and gives up after 10 min', () => {
@@ -804,7 +830,7 @@ export const GIVE_UP_AFTER_MS = 10 * 60_000;
 
 export type Parsed<T> = { ok: true; value: T } | { ok: false; error: string };
 export type Dims = { widthM?: number; lengthM?: number; ceilingM?: number };
-export type VisualizationInput = { image: Buffer; space: Option; plant: Plant; style: Option; placement: Option; dims: Dims };
+export type VisualizationInput = { image: Buffer; space: Option; plant: Plant; style: Option; placement: Option; dims: Dims; aspect: string };
 
 const DIM_RANGES: [keyof Dims, number, number][] = [['widthM', 1, 200], ['lengthM', 1, 200], ['ceilingM', 2, 20]];
 
@@ -815,6 +841,30 @@ export function parseImage(base64: unknown): Parsed<Buffer> {
   if (image.length > MAX_IMAGE_BYTES) return { ok: false, error: 'That photo is too large. Please try a smaller one.' };
   if (image[0] !== 0xff || image[1] !== 0xd8 || image[2] !== 0xff) return { ok: false, error: 'That photo could not be read. Please try a JPG, PNG, or WebP image.' };
   return { ok: true, value: image };
+}
+
+// Kie's allowed image_size ratios. 'auto' is left out on purpose: it can follow the plant photo's shape instead of the room's.
+const RATIOS: [string, number][] = [['1:1', 1], ['9:16', 9 / 16], ['16:9', 16 / 9], ['3:4', 3 / 4], ['4:3', 4 / 3], ['3:2', 3 / 2], ['2:3', 2 / 3], ['5:4', 5 / 4], ['4:5', 4 / 5], ['21:9', 21 / 9]];
+
+export function nearestRatio(width: number, height: number): string {
+  const distance = (ratio: number) => Math.abs(Math.log(ratio / (width / height)));
+  return RATIOS.reduce((best, candidate) => (distance(candidate[1]) < distance(best[1]) ? candidate : best))[0];
+}
+
+// Width and height from the first Start-Of-Frame marker; null when the file has none.
+export function jpegSize(image: Buffer): { width: number; height: number } | null {
+  let i = 2;
+  while (i + 9 < image.length) {
+    if (image[i] !== 0xff) return null;
+    const marker = image[i + 1];
+    if (marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc) {
+      return { height: image.readUInt16BE(i + 5), width: image.readUInt16BE(i + 7) };
+    }
+    const length = image.readUInt16BE(i + 2);
+    if (length < 2) return null;
+    i += 2 + length;
+  }
+  return null;
 }
 
 function parseDims(raw: unknown): Parsed<Dims> {
@@ -840,9 +890,11 @@ export function parseVisualizationRequest(body: unknown): Parsed<VisualizationIn
   if (!space || !plant || !style || !placement) return { ok: false, error: 'Please choose a space, a plant, a style and a placement.' };
   const image = parseImage(input.image);
   if (!image.ok) return image;
+  const size = jpegSize(image.value);
+  if (!size?.width || !size.height) return { ok: false, error: 'That photo could not be read. Please try a JPG, PNG, or WebP image.' };
   const dims = parseDims(input.dims);
   if (!dims.ok) return dims;
-  return { ok: true, value: { image: image.value, space, plant, style, placement, dims: dims.value } };
+  return { ok: true, value: { image: image.value, space, plant, style, placement, dims: dims.value, aspect: nearestRatio(size.width, size.height) } };
 }
 
 export function nextStep(v: { status: string; createdAt: number; checkedAt: number }, now: number): 'done' | 'timeout' | 'check' | 'wait' {
@@ -855,7 +907,7 @@ export function nextStep(v: { status: string; createdAt: number; checkedAt: numb
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `npm --prefix functions test`
-Expected: PASS, 7 tests.
+Expected: PASS, 8 tests.
 
 - [ ] **Step 5: Commit**
 
@@ -873,7 +925,7 @@ git commit -m "Validate visualization requests"
 
 **Interfaces:**
 - Consumes: `catalog`, `byId` from `./catalog.js`; type `VisualizationInput` from `./rules.js`
-- Produces: `buildPrompt(choices: Omit<VisualizationInput, 'image'>): string`
+- Produces: `buildPrompt(choices: Pick<VisualizationInput, 'space' | 'plant' | 'style' | 'placement' | 'dims'>): string`
 
 If Task 0 changed the wording, use the tuned wording here and adjust the regexes in the test to match.
 
@@ -928,7 +980,7 @@ import { catalog, byId } from './catalog.js';
 import type { VisualizationInput } from './rules.js';
 
 // Every word comes from the catalog or from fixed text: customer free text never reaches the model.
-export function buildPrompt({ space, plant, style, placement, dims }: Omit<VisualizationInput, 'image'>): string {
+export function buildPrompt({ space, plant, style, placement, dims }: Pick<VisualizationInput, 'space' | 'plant' | 'style' | 'placement' | 'dims'>): string {
   const room = space.id === 'other' ? 'space' : space.label.toLowerCase();
   const spot = placement.id === 'auto'
     ? `wherever it looks most natural (it suits being ${plant.placements.map((id) => byId(catalog.placements, id)?.label.toLowerCase()).join(', ')})`
@@ -954,7 +1006,7 @@ export function buildPrompt({ space, plant, style, placement, dims }: Omit<Visua
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `npm --prefix functions test`
-Expected: PASS, 10 tests.
+Expected: PASS, 11 tests.
 
 - [ ] **Step 5: Commit**
 
@@ -974,7 +1026,7 @@ git commit -m "Build visualization prompt from catalog values"
 - Produces:
   - `KIE_API_KEY` (a `defineSecret` declaration), `PROVIDER = 'kie'`, `MODEL`
   - type `ProviderTask = { state: 'pending' } | { state: 'success'; imageUrl: string } | { state: 'fail'; message: string }`
-  - `createTask(prompt: string, imageUrls: string[]): Promise<string>` (returns the task id)
+  - `createTask(prompt: string, imageUrls: string[], aspect: string): Promise<string>` (`aspect` is a Kie ratio from `nearestRatio`; returns the task id)
   - `getTask(taskId: string): Promise<ProviderTask>`
   - `parseTask(data: { state?: string; resultJson?: string; failMsg?: string }): ProviderTask`
 
@@ -1028,11 +1080,11 @@ async function call(path: string, init: RequestInit = {}) {
 }
 
 // ponytail: no automatic retry; a failed start refunds the customer's slot and they can press the button again.
-export async function createTask(prompt: string, imageUrls: string[]): Promise<string> {
+export async function createTask(prompt: string, imageUrls: string[], aspect: string): Promise<string> {
   const data = await call('/createTask', {
     method: 'POST',
-    // image_size 'auto' keeps the room's framing; Kie's default 1:1 would crop it.
-    body: JSON.stringify({ model: MODEL, input: { prompt, image_urls: imageUrls, output_format: 'png', image_size: 'auto' } }),
+    // Never 'auto': G0 run 1 returned a portrait image for a landscape room. `aspect` is the room photo's own shape.
+    body: JSON.stringify({ model: MODEL, input: { prompt, image_urls: imageUrls, output_format: 'png', image_size: aspect } }),
   });
   return data.taskId;
 }
@@ -1058,7 +1110,7 @@ export function parseTask(data: { state?: string; resultJson?: string; failMsg?:
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `npm --prefix functions test`
-Expected: PASS, 12 tests.
+Expected: PASS, 13 tests.
 
 - [ ] **Step 5 (you): Store the Kie key in Secret Manager**
 
@@ -1090,7 +1142,7 @@ git commit -m "Add Kie image provider"
     - Success: `200 { status: 'processing' | 'succeeded' | 'failed', items: [{ productId, quantity }], choices: { spaceType, style, placement }, before: url | null, after: url | null }`
     - Not found: `404 { error }`
     - The `before` and `after` URLs are set only when the status is `succeeded`; they are signed and valid for 1 hour.
-- Firestore `visualizations/{id}` has these fields: `status`, `items`, `spaceType`, `style`, `placement`, `dims`, `provider`, `model`, `taskId`, `prompt`, `error`, `ipKey`, `createdAt`, `checkedAt`, `completedAt`, `expiresAt`.
+- Firestore `visualizations/{id}` has these fields: `status`, `items`, `spaceType`, `style`, `placement`, `dims`, `aspect`, `provider`, `model`, `taskId`, `prompt`, `error`, `ipKey`, `createdAt`, `checkedAt`, `completedAt`, `expiresAt`.
 
 - [ ] **Step 1 (you): Allow the function to sign Storage URLs.** Do both of these once:
   1. Google Cloud console → APIs & Services → enable **IAM Service Account Credentials API**.
@@ -1115,7 +1167,7 @@ initializeApp();
 const db = getFirestore();
 const bucket = getStorage().bucket();
 
-const DAILY_CAP = 50; // ponytail: hard ceiling on paid generations per UTC day; raise here and redeploy
+const DAILY_CAP = 20; // hard ceiling on paid generations per UTC day; raise here and redeploy
 const IP_CAP = 5; // best effort only: offices share an IP and headers can be spoofed; DAILY_CAP is the real limit
 const KEEP_MS = 30 * 24 * 60 * 60_000;
 const SITE = `https://${process.env.GCLOUD_PROJECT}.web.app`; // Kie downloads plant photos from here
@@ -1127,6 +1179,7 @@ type Visualization = {
   style: string;
   placement: string;
   dims: Dims;
+  aspect: string; // the Kie ratio sent: nearest the room photo's own shape
   provider: string;
   model: string;
   taskId: string | null;
@@ -1175,6 +1228,7 @@ async function createVisualization(req: Request): Promise<Reply> {
     style: choices.style.id,
     placement: choices.placement.id,
     dims: choices.dims,
+    aspect: choices.aspect,
     provider: PROVIDER,
     model: MODEL,
     taskId: null,
@@ -1189,7 +1243,7 @@ async function createVisualization(req: Request): Promise<Reply> {
   try {
     const roomPath = `visualizations/${ref.id}/room.jpg`;
     await bucket.file(roomPath).save(image, { contentType: 'image/jpeg' });
-    record.taskId = await createTask(record.prompt, [await signedUrl(roomPath, 30), `${SITE}${choices.plant.image}`]);
+    record.taskId = await createTask(record.prompt, [await signedUrl(roomPath, 30), `${SITE}${choices.plant.image}`], choices.aspect);
   } catch (err) {
     logger.error('Could not start generation', err);
     await refundSlot(ipKey);
@@ -1267,7 +1321,7 @@ function refundSlot(ipKey: string) {
 - [ ] **Step 3: Compile and run the unit tests**
 
 Run: `npm --prefix functions test`
-Expected: PASS, 12 tests, and no TypeScript errors.
+Expected: PASS, 13 tests, and no TypeScript errors.
 
 - [ ] **Step 4: Deploy the function**
 
@@ -1291,7 +1345,7 @@ for i in $(seq 30); do curl -s "https://$PROJECT.web.app/api/visualizations/$ID"
 
 Expected:
 - `"status":"processing"` for a while (the record has no `before` or `after` URLs yet), then `"status":"succeeded"` with both URLs.
-- Opening `after` in a browser shows the room with the plant.
+- Opening `after` in a browser shows the room with the plant, in the same landscape or portrait shape as your photo.
 - Stop the loop once it succeeds.
 
 Keep `viz-request.json` for Step 7.
@@ -1311,8 +1365,8 @@ Expected: `cache-control: private, no-store`
   4. Delete the document, then run `rm viz-request.json`.
 
 - [ ] **Step 8: Inspect the stored data**
-  - Firestore `visualizations/$ID` should have `status: "succeeded"`, `items: [{productId: "snake-plant", quantity: 1}]`, a `prompt` string, a `taskId`, and `expiresAt` about 30 days ahead.
-  - Storage `visualizations/$ID/` should contain `room.jpg` and `result.png`.
+  - Firestore `visualizations/$ID` should have `status: "succeeded"`, `items: [{productId: "snake-plant", quantity: 1}]`, a `prompt` string, a `taskId`, an `aspect` matching your photo (`"4:3"` for a landscape photo, `"3:4"` for a portrait one), and `expiresAt` about 30 days ahead.
+  - Storage `visualizations/$ID/` should contain `room.jpg` and `result.png`, and `result.png` has the same landscape or portrait shape as `room.jpg`.
 
 - [ ] **Step 9: Commit**
 
@@ -1709,7 +1763,7 @@ Expected:
   - **File type.** Choose a `.heic` file (or a `.gif`). Expected: "Choose a JPG, PNG, or WebP image."
   - **Corrupt file.** Rename a text file to `broken.jpg` and choose it. Expected: after you press "Create my preview", Step 1 shows "We couldn't read that photo…".
   - **Large file.** Choose an image over 25 MB. Expected: "Please choose a photo under 25 MB."
-  - **Portrait photo.** Choose a portrait photo taken on a phone. Expected: the "Before" image is upright.
+  - **Portrait photo.** Choose a portrait photo taken on a phone. Expected: the "Before" image is upright and the "After" image is portrait too.
   - **Reload.** Reload the page while the spinner shows. Expected: the spinner comes back and the result appears.
   - **Preselect.** Open `/visualize/?plant=monstera` and go to Step 2. Expected: Monstera is already selected.
   - **Mobile.** Set DevTools to 375 px wide. Expected: no horizontal scrolling, and Before/After stack vertically.
@@ -1841,7 +1895,7 @@ The visualizer's handoff is worthless while the enquiry form only previews, and 
     - Responses: `201 { id }` or `400 { error }`
   - Firestore `enquiries/{id}`: the `Enquiry` fields plus `photoPath` and `createdAt`.
 
-- [ ] **Step 1: Write the failing tests.** In `functions/src/rules.test.ts`, change the import to `import { parseVisualizationRequest, parseEnquiry, nextStep, MAX_IMAGE_BYTES } from './rules.js';`, then append:
+- [ ] **Step 1: Write the failing tests.** In `functions/src/rules.test.ts`, change the import to `import { parseVisualizationRequest, parseEnquiry, nextStep, jpegSize, nearestRatio, MAX_IMAGE_BYTES } from './rules.js';`, then append:
 
 ```ts
 test('enquiries need a space, a name and a way to reach you', () => {
@@ -1925,7 +1979,7 @@ export function parseEnquiry(body: unknown): Parsed<{ enquiry: Enquiry; photo: B
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `npm --prefix functions test`
-Expected: PASS, 14 tests.
+Expected: PASS, 15 tests.
 
 - [ ] **Step 5: Add the route.** In `functions/src/index.ts`:
 

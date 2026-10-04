@@ -400,6 +400,6 @@ Expected: the build succeeds and the last line printed is the `const MAKEOVER_EN
 ## Self-review
 
 - **Spec coverage:** mode switch, quantity checklist with a running total capped at 8, the "How we designed it" panel (rationale, furniture notes, per-plant lines), "Try another layout" (the existing "Try another look" button, which clears and keeps the choices), the approximate-AI note, `textContent` for model text, invalidation on any change, restore from a link, the privacy line, and the enquiry carrying the preview by `visualizationId` with the chosen plants in the notes (the spec's "enquiry schema does not change" holds: only existing fields are used).
-- **Spec wording differences:** the spec says "Try another layout"; the existing button reads "Try another look" and serves both modes, so its label is left alone. Say so to the user if they want it renamed for the makeover.
+- **Result action wording:** the shared button reads "Try another look" for a single plant and "Try another layout" for a makeover.
 - **Placeholders:** none. Every edit is a full file or an exact patch; the only run-time values are the local preview port and the user's real photo at go-live.
 - **Type consistency:** `Quantities`, `Item`, `capQuantity`, `fromItems`, `toItems`, `summarise`, `total` and `MAX_PLANTS` are defined once in Task 1 and imported under the same names in Task 2.

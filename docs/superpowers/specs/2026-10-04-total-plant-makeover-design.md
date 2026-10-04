@@ -9,7 +9,7 @@ A second preview mode, **Total plant makeover**, inside the existing `#plant-pla
 Agreed with the user:
 - Output is a re-staged photo plus a written rationale (not plants-only, not a floor plan).
 - One click. The plan is shown together with the result, with a "Try another layout" button. There is no plan-then-approve step.
-- Customer-facing, in the same form, products from the shared catalog only. Same daily caps (50 total, 5 per IP).
+- Customer-facing, in the same form, products from the shared catalog only. Same daily caps (20 total, 5 per IP).
 
 ## How it works
 
