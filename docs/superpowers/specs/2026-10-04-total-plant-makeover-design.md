@@ -43,7 +43,7 @@ Reply `201 { id }`; errors use `{ error }` as today. New failure: `404` when the
 The only file that knows Groq, like `imageProvider.ts` for Kie.
 
 - `POST https://api.groq.com/openai/v1/chat/completions`, Bearer `GROQ_API_KEY`, `response_format: { type: "json_object" }` (the system prompt must contain the word "JSON"), temperature 0.4, `max_tokens` about 700, `AbortSignal.timeout(8000)`.
-- Model id is one constant, overridable by `GROQ_MODEL`. Default `meta-llama/llama-4-scout-17b-16e-instruct`. Groq retires models often, so confirm it is still listed when the key is first used.
+- Model id is one constant, overridable by `GROQ_MODEL`. Default `qwen/qwen3.8-27b`. Checked 2026-10-04 with the project's key: it is the only image-capable model that account can use (Llama 4 Scout is not listed any more), and a small image plus JSON-mode call returned clean JSON in about 0.8 s. Groq retires models often, so keep it a constant and re-check the list if calls start failing. Not yet verified: that Groq can fetch a Supabase signed URL; the first implementation step tests this and falls back to base64 (under 4 MB) if not.
 - Input: the room photo as a **signed URL** (the same short-lived URL already made for Kie, which avoids Groq's 4 MB base64 limit and its 5-image cap), plus text built from the catalog: each product's name, height, pot width, compatible placements and quantity, the style's `prompt`, the space label and any room dimensions. Customer free text is never included.
 - Output the model must produce:
   ```json
