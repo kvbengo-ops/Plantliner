@@ -5,7 +5,7 @@ import { design, type Plan } from './designer.js';
 import { PROVIDER, MODEL, createTask, getTask } from './imageProvider.js';
 import { db, must, newId, save, signedUrl } from './db.js';
 
-const DAILY_CAP = 50; // ponytail: hard ceiling on paid generations per UTC day; raise here and redeploy
+const DAILY_CAP = 20; // hard ceiling on paid generations per UTC day; raise here and redeploy
 const IP_CAP = 5; // best effort only: offices share an IP and headers can be spoofed; DAILY_CAP is the real limit
 const KEEP_MS = 30 * 24 * 60 * 60_000;
 // Kie downloads plant photos from the deployment that took the request, so a preview uses its own photos.
