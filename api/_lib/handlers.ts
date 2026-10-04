@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
-import { parseVisualizationRequest, parseEnquiry, nextStep, type Dims } from './rules.js';
-import { buildPrompt } from './prompt.js';
+import { parseVisualizationRequest, parseMakeoverRequest, parseEnquiry, nextStep, type Dims } from './rules.js';
+import { buildPrompt, buildMakeoverPrompt } from './prompt.js';
+import { design, type Plan } from './designer.js';
 import { PROVIDER, MODEL, createTask, getTask } from './imageProvider.js';
 import { db, must, newId, save, signedUrl } from './db.js';
 
@@ -24,6 +25,9 @@ type Row = {
   model: string;
   task_id: string | null;
   prompt: string;
+  mode: 'single' | 'makeover';
+  plan: Plan | null;
+  rationale: string | null;
   error: string | null;
   ip_key: string;
   created_at: number;
@@ -47,9 +51,13 @@ export async function respond(request: Request, handler: (body: unknown, request
 }
 
 export async function createVisualization(body: unknown, request: Request): Promise<Reply> {
-  const parsed = parseVisualizationRequest(body);
+  const makeover = (body as { mode?: unknown } | undefined)?.mode === 'makeover';
+  // Closed in production until the makeover passes its quality gate (G1); see MAKEOVER_ENABLED in the README.
+  if (makeover && process.env.MAKEOVER_ENABLED !== '1') return [404, { error: 'Not found' }];
+  const parsed = makeover ? parseMakeoverRequest(body) : parseVisualizationRequest(body);
   if (!parsed.ok) return [400, { error: parsed.error }];
-  const { image, ...choices } = parsed.value;
+  const input = parsed.value;
+  const items = input.mode === 'makeover' ? input.items : [{ plant: input.plant, quantity: 1 }];
 
   const day = new Date().toISOString().slice(0, 10);
   const ip = (request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip') ?? '').split(',')[0].trim();
@@ -63,16 +71,19 @@ export async function createVisualization(body: unknown, request: Request): Prom
   const row: Row = {
     id,
     status: 'processing',
-    items: [{ productId: choices.plant.id, quantity: 1 }], // an array so a future "AI Designer" can add several plants
-    space_type: choices.space.id,
-    style: choices.style.id,
-    placement: choices.placement.id,
-    dims: choices.dims,
-    aspect: choices.aspect,
+    items: items.map(({ plant, quantity }) => ({ productId: plant.id, quantity })),
+    space_type: input.space.id,
+    style: input.style.id,
+    placement: input.mode === 'single' ? input.placement.id : 'auto', // in a makeover the designer chooses
+    dims: input.dims,
+    aspect: input.aspect,
     provider: PROVIDER,
     model: MODEL,
     task_id: null,
-    prompt: buildPrompt(choices),
+    prompt: input.mode === 'single' ? buildPrompt(input) : '', // a makeover prompt needs the designer's plan, set below
+    mode: input.mode,
+    plan: null,
+    rationale: null,
     error: null,
     ip_key: ipKey,
     created_at: now,
@@ -82,8 +93,16 @@ export async function createVisualization(body: unknown, request: Request): Prom
   };
   try {
     const roomPath = `visualizations/${id}/room.jpg`;
-    await save(roomPath, image, 'image/jpeg');
-    row.task_id = await createTask(row.prompt, [await signedUrl(roomPath, 30), `${siteUrl(request)}${choices.plant.image}`], choices.aspect);
+    await save(roomPath, input.image, 'image/jpeg');
+    const roomUrl = await signedUrl(roomPath, 30);
+    if (input.mode === 'makeover') {
+      const plan = await design({ space: input.space, style: input.style, items, dims: input.dims, roomUrl });
+      row.plan = plan;
+      row.rationale = plan.rationale;
+      row.prompt = buildMakeoverPrompt({ space: input.space, style: input.style, items, plan, dims: input.dims });
+    }
+    // Reference photos follow the room in item order; buildMakeoverPrompt numbers them the same way.
+    row.task_id = await createTask(row.prompt, [roomUrl, ...items.map(({ plant }) => `${siteUrl(request)}${plant.image}`)], input.aspect);
   } catch (err) {
     console.error('Could not start generation', err);
     await db.rpc('refund_slot', { p_ip_key: ipKey });
@@ -119,8 +138,11 @@ export async function getVisualization(id: string): Promise<Reply> {
   const done = v.status === 'succeeded';
   return [200, {
     status: v.status,
+    mode: v.mode,
     items: v.items,
     choices: { spaceType: v.space_type, style: v.style, placement: v.placement },
+    rationale: v.rationale,
+    layout: v.plan ? { furniture: v.plan.furniture, plants: v.plan.plants } : null,
     before: done ? await signedUrl(`visualizations/${id}/room.jpg`, 60) : null,
     after: done ? await signedUrl(`visualizations/${id}/result.png`, 60) : null,
   }];
