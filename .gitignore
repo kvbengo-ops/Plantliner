@@ -8,3 +8,4 @@ functions/src/catalog.json
 .firebase/
 *-debug.log
 .api-build/
+g1-results/
