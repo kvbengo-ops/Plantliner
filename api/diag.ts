@@ -20,7 +20,7 @@ function keyKind(key: string) {
 }
 
 export async function GET() {
-  const env = Object.fromEntries(['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'KIE_API_KEY', 'CRON_SECRET'].map((key) => [key, Boolean(process.env[key])]));
+  const env = Object.fromEntries(['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'KIE_API_KEY', 'CRON_SECRET', 'GROQ_API_KEY'].map((key) => [key, Boolean(process.env[key])]));
   const imports: Record<string, string> = {};
   for (const [name, load] of Object.entries(modules)) {
     try {
@@ -40,5 +40,9 @@ export async function GET() {
   } catch (err) {
     checks.error = String(err).slice(0, 300);
   }
-  return Response.json({ vercelEnv: process.env.VERCEL_ENV, env, imports, checks });
+  // The makeover is only allowed when the flag is exactly '1', so report its length and exactness, never its value.
+  const flag = process.env.MAKEOVER_ENABLED;
+  const makeoverFlag = { set: flag !== undefined, length: flag?.length ?? 0, exactlyOne: flag === '1' };
+  const deployment = { commit: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7), branch: process.env.VERCEL_GIT_COMMIT_REF, id: process.env.VERCEL_DEPLOYMENT_ID };
+  return Response.json({ vercelEnv: process.env.VERCEL_ENV, deployment, makeoverFlag, env, imports, checks });
 }
