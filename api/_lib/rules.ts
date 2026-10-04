@@ -6,7 +6,14 @@ export const GIVE_UP_AFTER_MS = 10 * 60_000;
 
 export type Parsed<T> = { ok: true; value: T } | { ok: false; error: string };
 export type Dims = { widthM?: number; lengthM?: number; ceilingM?: number };
-export type VisualizationInput = { image: Buffer; space: Option; plant: Plant; style: Option; placement: Option; dims: Dims; aspect: string };
+export type Item = { plant: Plant; quantity: number };
+type Room = { image: Buffer; space: Option; style: Option; dims: Dims; aspect: string };
+export type VisualizationInput = Room & { mode: 'single'; plant: Plant; placement: Option };
+export type MakeoverInput = Room & { mode: 'makeover'; items: Item[] };
+
+// Image models stop counting reliably above this. Every item is at least 1, so it also keeps distinct
+// products at 8 or fewer, under Kie's limit of 9 reference photos (10 images minus the room).
+export const MAX_PLANTS = 8;
 
 const DIM_RANGES: [keyof Dims, number, number][] = [['widthM', 1, 200], ['lengthM', 1, 200], ['ceilingM', 2, 20]];
 
@@ -57,6 +64,17 @@ function parseDims(raw: unknown): Parsed<Dims> {
   return { ok: true, value: dims };
 }
 
+// The photo, room size and output shape: everything both modes share once space and style are resolved.
+function parseRoom(input: Record<string, unknown>, space: Option, style: Option): Parsed<Room> {
+  const image = parseImage(input.image);
+  if (!image.ok) return image;
+  const size = jpegSize(image.value);
+  if (!size?.width || !size.height) return { ok: false, error: 'That photo could not be read. Please try a JPG, PNG, or WebP image.' };
+  const dims = parseDims(input.dims);
+  if (!dims.ok) return dims;
+  return { ok: true, value: { image: image.value, space, style, dims: dims.value, aspect: nearestRatio(size.width, size.height) } };
+}
+
 export function parseVisualizationRequest(body: unknown): Parsed<VisualizationInput> {
   const input = (body ?? {}) as Record<string, unknown>;
   const space = byId(catalog.spaceTypes, input.spaceType);
@@ -64,13 +82,37 @@ export function parseVisualizationRequest(body: unknown): Parsed<VisualizationIn
   const style = byId(catalog.styles, input.style);
   const placement = byId(catalog.placements, input.placement);
   if (!space || !plant || !style || !placement) return { ok: false, error: 'Please choose a space, a plant, a style and a placement.' };
-  const image = parseImage(input.image);
-  if (!image.ok) return image;
-  const size = jpegSize(image.value);
-  if (!size?.width || !size.height) return { ok: false, error: 'That photo could not be read. Please try a JPG, PNG, or WebP image.' };
-  const dims = parseDims(input.dims);
-  if (!dims.ok) return dims;
-  return { ok: true, value: { image: image.value, space, plant, style, placement, dims: dims.value, aspect: nearestRatio(size.width, size.height) } };
+  const room = parseRoom(input, space, style);
+  if (!room.ok) return room;
+  return { ok: true, value: { ...room.value, mode: 'single', plant, placement } };
+}
+
+// Unknown ids, fractional or missing quantities and totals outside 1..MAX_PLANTS are rejected; repeated ids are merged.
+export function parseItems(raw: unknown): Parsed<Item[]> {
+  const error = `Please choose 1 to ${MAX_PLANTS} plants in total, with a quantity for each.`;
+  if (!Array.isArray(raw) || raw.length === 0 || raw.length > MAX_PLANTS) return { ok: false, error };
+  const merged = new Map<string, Item>();
+  for (const entry of raw) {
+    const { productId, quantity } = (entry ?? {}) as Record<string, unknown>;
+    const plant = byId(catalog.plants, productId);
+    if (!plant || typeof quantity !== 'number' || !Number.isInteger(quantity) || quantity < 1) return { ok: false, error };
+    merged.set(plant.id, { plant, quantity: (merged.get(plant.id)?.quantity ?? 0) + quantity });
+  }
+  const items = [...merged.values()];
+  return items.reduce((sum, item) => sum + item.quantity, 0) > MAX_PLANTS ? { ok: false, error } : { ok: true, value: items };
+}
+
+// Total plant makeover: the designer decides placement, so the request carries items and a style but no plant or placement.
+export function parseMakeoverRequest(body: unknown): Parsed<MakeoverInput> {
+  const input = (body ?? {}) as Record<string, unknown>;
+  const space = byId(catalog.spaceTypes, input.spaceType);
+  const style = byId(catalog.styles, input.style);
+  if (!space || !style) return { ok: false, error: 'Please choose a space and a style.' };
+  const items = parseItems(input.items);
+  if (!items.ok) return items;
+  const room = parseRoom(input, space, style);
+  if (!room.ok) return room;
+  return { ok: true, value: { ...room.value, mode: 'makeover', items: items.value } };
 }
 
 export function nextStep(v: { status: string; createdAt: number; checkedAt: number }, now: number): 'done' | 'timeout' | 'check' | 'wait' {

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseVisualizationRequest, parseEnquiry, nextStep, jpegSize, nearestRatio, MAX_IMAGE_BYTES } from './rules.js';
+import { parseVisualizationRequest, parseMakeoverRequest, parseItems, parseEnquiry, nextStep, jpegSize, nearestRatio, MAX_IMAGE_BYTES, MAX_PLANTS } from './rules.js';
 
 // A minimal JPEG: the start marker, one frame header (SOF0) carrying the size, and the end marker.
 const jpegOf = (width: number, height: number) =>
@@ -11,6 +11,7 @@ const valid = { image: jpeg, spaceType: 'office', productId: 'snake-plant', styl
 test('accepts a valid request and resolves catalog entries', () => {
   const result = parseVisualizationRequest(valid);
   assert.ok(result.ok);
+  assert.equal(result.value.mode, 'single');
   assert.equal(result.value.plant.id, 'snake-plant');
   assert.equal(result.value.style.id, 'japandi');
   assert.deepEqual(result.value.dims, {});
@@ -82,4 +83,32 @@ test('enquiries drop unknown plants and malformed visualization ids, and reject 
   assert.equal(result.value.enquiry.productId, null);
   assert.equal(result.value.enquiry.visualizationId, null);
   assert.equal(parseEnquiry({ space: 'cafe', name: 'Sam', contactMethod: 'Phone', contact: '0123', photo: 'aGVsbG8=' }).ok, false);
+});
+
+const makeover = { image: jpeg, spaceType: 'cafe', style: 'japandi', items: [{ productId: 'snake-plant', quantity: 2 }, { productId: 'monstera', quantity: 1 }] };
+const summary = (items: { plant: { id: string }; quantity: number }[]) => items.map((item) => [item.plant.id, item.quantity]);
+
+test('a makeover request resolves its items in order and needs no plant or placement', () => {
+  const result = parseMakeoverRequest(makeover);
+  assert.ok(result.ok);
+  assert.equal(result.value.mode, 'makeover');
+  assert.deepEqual(summary(result.value.items), [['snake-plant', 2], ['monstera', 1]]);
+  assert.equal(result.value.aspect, '4:3');
+});
+
+test('makeover items merge repeats, cap the total and reject anything unclear', () => {
+  const merged = parseItems([{ productId: 'zz-plant', quantity: 1 }, { productId: 'zz-plant', quantity: 2 }]);
+  assert.ok(merged.ok);
+  assert.deepEqual(summary(merged.value), [['zz-plant', 3]]);
+  assert.ok(parseItems([{ productId: 'zz-plant', quantity: MAX_PLANTS }]).ok);
+  assert.equal(parseItems([{ productId: 'zz-plant', quantity: MAX_PLANTS }, { productId: 'monstera', quantity: 1 }]).ok, false); // 9 in total
+  const unclear = [undefined, [], 'snake-plant', [null], [{ productId: 'plastic-tree', quantity: 1 }], [{ productId: 'zz-plant', quantity: 1.5 }], [{ productId: 'zz-plant', quantity: 0 }], [{ productId: 'zz-plant', quantity: '2' }], [{ productId: 'zz-plant' }]];
+  for (const bad of unclear) assert.equal(parseItems(bad).ok, false, JSON.stringify(bad));
+});
+
+test('a makeover still needs a known space and style, a readable photo and items', () => {
+  for (const key of ['spaceType', 'style']) assert.equal(parseMakeoverRequest({ ...makeover, [key]: 'nope' }).ok, false, key);
+  assert.equal(parseMakeoverRequest({ ...makeover, image: '' }).ok, false);
+  assert.equal(parseMakeoverRequest({ ...makeover, items: undefined }).ok, false);
+  assert.equal(parseMakeoverRequest(undefined).ok, false);
 });
