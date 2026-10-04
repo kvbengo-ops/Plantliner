@@ -7,8 +7,9 @@ import { db, must, newId, save, signedUrl } from './db.js';
 const DAILY_CAP = 50; // ponytail: hard ceiling on paid generations per UTC day; raise here and redeploy
 const IP_CAP = 5; // best effort only: offices share an IP and headers can be spoofed; DAILY_CAP is the real limit
 const KEEP_MS = 30 * 24 * 60 * 60_000;
-// Kie downloads plant photos from the live site. VERCEL_PROJECT_PRODUCTION_URL is set by Vercel; SITE_URL overrides it (custom domain).
-const siteUrl = () => (process.env.SITE_URL || `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`).replace(/\/$/, '');
+// Kie downloads plant photos from the deployment that took the request, so a preview uses its own photos.
+// SITE_URL overrides it for `vercel dev`, where localhost is unreachable from Kie.
+const siteUrl = (request: Request) => (process.env.SITE_URL || new URL(request.url).origin).replace(/\/$/, '');
 
 type Row = {
   id: string;
@@ -82,7 +83,7 @@ export async function createVisualization(body: unknown, request: Request): Prom
   try {
     const roomPath = `visualizations/${id}/room.jpg`;
     await save(roomPath, image, 'image/jpeg');
-    row.task_id = await createTask(row.prompt, [await signedUrl(roomPath, 30), `${siteUrl()}${choices.plant.image}`], choices.aspect);
+    row.task_id = await createTask(row.prompt, [await signedUrl(roomPath, 30), `${siteUrl(request)}${choices.plant.image}`], choices.aspect);
   } catch (err) {
     console.error('Could not start generation', err);
     await db.rpc('refund_slot', { p_ip_key: ipKey });
