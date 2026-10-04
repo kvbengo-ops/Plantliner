@@ -22,6 +22,7 @@
 - `mode: "makeover"` answers `404 { error: "Not found" }` unless `MAKEOVER_ENABLED` is exactly `1`. The check happens before any slot is taken or any provider is contacted.
 - Makeover rows store `placement = 'auto'` (the column is `not null`); `items` is `[{ productId, quantity }]`.
 - `GROQ_API_KEY` lives only in Vercel environment variables and the git-ignored `.env.local`. Never write it into a tracked file, a test, a log line or an error message.
+- Daily caps are 20 total and 5 per IP (`DAILY_CAP` in `handlers.ts` went from 50 to 20 on 2026-10-04). No test may depend on the number.
 - Single-plant requests must behave exactly as before (same prompt, same Kie call, no Groq call).
 - Migration `0002` must be run in Supabase **before** the new code is deployed: every row the new code inserts includes the new columns.
 - Other people's uncommitted work is in this working tree (`src/pages`, `src/styles`, `TASK_BOARD.md`, `firebase.json`, `functions/` and more). Commit only the files each task lists, with `git add <those files>`, never `git add -A` or `git commit -a`.
@@ -80,7 +81,7 @@ git status --short api supabase vercel.json
 npm run test:api
 ```
 
-Expected: `git status` prints nothing for those paths; the test run ends with `ℹ pass 15` and `ℹ fail 0`. If either differs, stop and report it.
+Expected: the test run ends with `ℹ pass 15` and `ℹ fail 0`, and `git status` prints nothing for those paths, with one allowed exception: ` M api/_lib/handlers.ts` whose only change is `DAILY_CAP` going from 50 to 20. That is a decision already recorded in the spec, the board and the older visualizer plan, but not yet committed. If you see it, ask the user whether to commit it now on its own (`git add api/_lib/handlers.ts`, then `git commit -m "Lower the daily preview cap to 20"` with the usual trailer) and wait for the answer; never revert it. Anything else that differs: stop and report it.
 
 - [ ] **Step 2: Write the failing tests**
 
@@ -1034,6 +1035,8 @@ Expected: `ℹ pass 36`, `ℹ fail 0` (28 + 8 new). One `Could not start generat
 <!-- expect: pass 36 -->
 
 - [ ] **Step 6: Commit**
+
+If the `DAILY_CAP` change from Task 1 is still uncommitted (the user said to leave it), stage `handlers.ts` with `git add -p api/_lib/handlers.ts` and skip that hunk instead of the whole-file `git add` below.
 
 ```bash
 git add supabase/migrations/0002_makeover.sql api/_lib/handlers.ts api/_lib/handlers.test.ts
