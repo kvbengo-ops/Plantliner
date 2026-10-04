@@ -8,7 +8,8 @@ import office from '../assets/office.png';
 import cafe from '../assets/cafe.png';
 import school from '../assets/school.png';
 import retail from '../assets/retail.png';
-import '../styles/global.css';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import catalog from '../data/catalog.json';
 
 // Category photos live in public/images/categories/<slug>.jpg; photographer credits are in CREDITS.md.
 // `space` pre-selects that option in the enquiry form when the card is clicked.
@@ -82,45 +83,7 @@ const questions = [
 ];
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f5f4ed" />
-    <meta name="description" content="Plantliner creates thoughtful plant solutions for offices, cafés, schools, and retail spaces. Find the right plant for your space." />
-    <title>Plantliner — The right plant for the right space</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
-  </head>
-  <body>
-    <a class="skip-link" href="#main">Skip to content</a>
-    <header class="site-header" id="top">
-      <div class="header-inner container">
-        <a class="brand" href="#top" aria-label="Plantliner home">
-          <span class="brand-mark" aria-hidden="true"><span></span><span></span></span>
-          <span>plantliner<span class="brand-dot">.</span></span>
-        </a>
-        <nav class="desktop-nav" aria-label="Main navigation">
-          <a href="#solutions">Solutions</a>
-          <a href="#how-it-works">How it works</a>
-          <a href="#faq">FAQ</a>
-        </nav>
-        <a class="button button-dark header-cta" href="#enquiry">Request a plant plan <span aria-hidden="true"><ArrowIcon direction="up-right" /></span></a>
-        <button class="menu-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav">
-          <span></span><span></span>
-        </button>
-      </div>
-      <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation" hidden>
-        <a href="#solutions">Solutions</a>
-        <a href="#how-it-works">How it works</a>
-        <a href="#faq">FAQ</a>
-        <a href="#enquiry">Request a plant plan</a>
-      </nav>
-    </header>
-
-    <main id="main">
+<BaseLayout title="Plantliner — The right plant for the right space" description="Plantliner creates thoughtful plant solutions for offices, cafés, schools, and retail spaces. Find the right plant for your space.">
       <section class="hero" aria-labelledby="hero-title">
         <Image class="hero-image" src={hero} alt="Sunlit commercial lounge with thoughtfully arranged indoor plants" width={1800} widths={[640, 1080, 1800]} sizes="(max-width: 760px) calc(100vw - 36px), 47vw" format="webp" loading="eager" fetchpriority="high" />
         <div class="hero-shade"></div>
@@ -130,7 +93,7 @@ const questions = [
             <h1 id="hero-title">The right plant,<br />for the <em>right space.</em></h1>
             <p class="hero-description">Thoughtful plant solutions for offices, cafés, schools, and retail spaces—selected to suit your light, layout, and level of care.</p>
             <div class="hero-actions">
-              <a class="button button-green" href="#enquiry">Request a plant plan <span aria-hidden="true"><ArrowIcon direction="up-right" /></span></a>
+              <a class="button button-green" href="/#enquiry">Request a plant plan <span aria-hidden="true"><ArrowIcon direction="up-right" /></span></a>
               <a class="text-link" href="#solutions">Explore solutions <span aria-hidden="true"><ArrowIcon direction="down" /></span></a>
             </div>
             <p class="hero-note">Your light. Your layout. A plan that belongs.</p>
@@ -197,7 +160,7 @@ const questions = [
                   <h3>{space.name}</h3>
                   <p>{space.description}</p>
                   <span class="space-plants">{space.plants}</span>
-                  <a href={`#enquiry`} data-space={space.slug} class="card-link" aria-label={`Request a plant plan for ${space.name}`}>
+                  <a href="/#enquiry" data-space={space.slug} class="card-link" aria-label={`Request a plant plan for ${space.name}`}>
                     Request a plan <span aria-hidden="true"><ArrowIcon direction="up-right" /></span>
                   </a>
                 </div>
@@ -222,7 +185,7 @@ const questions = [
           <ul class="category-grid">
             {categories.map((category) => (
               <li>
-                <a class="category-card" href="#enquiry" data-space={category.space} aria-label={`Start a plant plan: ${category.name}`}>
+                <a class="category-card" href="/#enquiry" data-space={category.space} aria-label={`Start a plant plan: ${category.name}`}>
                   <div class="category-image">
                     <SpaceIcon variant="leaf" />
                     {/* Removed if the photo is missing, so the leaf placeholder shows instead of a broken image. */}
@@ -247,6 +210,7 @@ const questions = [
             <p class="eyebrow light">Your plant plan <span class="eyebrow-line"></span></p>
             <h2 id="enquiry-title">Let's find<br /><em>what fits.</em></h2>
             <p>Start with your kind of space. We'll guide you through a few simple choices and take it from there.</p>
+            <a id="preview-entry" class="enquiry-preview-link" href="/#enquiry" hidden>Preview a plant in your space <ArrowIcon direction="up-right" /></a>
             <div class="next-steps">
               <h3>Simple from the start</h3>
               <p><span>01</span> Choose your space.</p>
@@ -297,7 +261,82 @@ const questions = [
                     <p class="field-hint" id="size-hint">A rough estimate is all we need.</p>
                   </div>
                 </div>
-                <div class="field"><label for="photo">A photo of your space <span class="optional-label">Optional</span></label><label class="upload-box" for="photo"><span class="upload-icon" aria-hidden="true"><ArrowIcon direction="up" /></span><span id="photo-label">Choose a photo to share</span><span class="upload-hint">JPG, PNG, or WebP · up to 10 MB</span></label><input class="visually-hidden" id="photo" aria-describedby="photo-error" name="photo" type="file" accept="image/jpeg,image/png,image/webp" /><small class="field-error" id="photo-error" role="status"></small></div>
+                <div class="field"><label for="photo">A photo of your space <span class="optional-label">Optional</span></label><label class="upload-box" for="photo"><span class="upload-icon" aria-hidden="true"><ArrowIcon direction="up" /></span><span class="upload-label" id="photo-label">Choose a photo to share</span><span class="upload-hint" id="photo-hint">JPG, PNG, or WebP · up to 10 MB</span></label><input class="visually-hidden" id="photo" aria-describedby="photo-error" name="photo" type="file" accept="image/jpeg,image/png,image/webp" /><small class="field-error" id="photo-error" role="status"></small></div>
+                <section class="preview-in-form" id="plant-preview" aria-labelledby="preview-in-form-title" hidden>
+                  <div class="preview-in-form-heading">
+                    <h4 id="preview-in-form-title">Preview a plant in your space</h4>
+                    <span>Optional preview</span>
+                  </div>
+                  <div class="preview-modes" id="preview-modes" role="radiogroup" aria-label="Type of preview" hidden>
+                    <label class="preview-mode"><input type="radio" name="previewMode" value="single" checked /><strong>Place one plant</strong><small>See one plant in your space.</small></label>
+                    <label class="preview-mode"><input type="radio" name="previewMode" value="makeover" /><strong>Total plant makeover</strong><small>Pick several plants. We rearrange the seating and tables around them.</small></label>
+                  </div>
+                  <p id="preview-intro">Choose one plant, a style, and a spot. Add a room photo above to see an approximate AI preview. You can continue without creating one.</p>
+                  <p class="preview-privacy" id="preview-privacy">Your photo is processed by our AI provider (Kie) to create the preview.</p>
+                  <div id="single-picker">
+                  <fieldset class="preview-plant-field" aria-describedby="preview-plant-error">
+                    <legend>Choose a plant <span class="optional-label">Optional</span></legend>
+                    <div class="preview-plant-grid">
+                      {catalog.plants.map((plant) => (
+                        <div class="preview-plant-option">
+                          <label class="preview-plant-card">
+                            <input type="radio" name="productId" value={plant.id} />
+                            <img src={plant.image} alt="" width="1024" height="1280" loading="lazy" />
+                            <span class="preview-plant-name">{plant.name}</span>
+                            <span class="preview-plant-size">About {plant.heightCm} cm tall · {plant.potDiameterCm} cm pot</span>
+                          </label>
+                          <button type="button" class="preview-expand preview-plant-expand" data-plant-image={plant.id} aria-label={`View ${plant.name} photo full screen`}>View full screen</button>
+                        </div>
+                      ))}
+                    </div>
+                  </fieldset>
+                  <small class="field-error" id="preview-plant-error" role="status"></small>
+                  </div>
+                  <div id="makeover-picker" hidden>
+                    <fieldset class="preview-plant-field" aria-describedby="makeover-error">
+                      <legend>Choose your plants and how many <span class="optional-label" id="makeover-total" role="status">0 of 8 plants</span></legend>
+                      <div class="preview-plant-grid">
+                        {catalog.plants.map((plant) => (
+                          <div class="preview-plant-option">
+                            <div class="makeover-card">
+                              <img src={plant.image} alt="" width="1024" height="1280" loading="lazy" />
+                              <span class="preview-plant-name">{plant.name}</span>
+                              <span class="preview-plant-size">About {plant.heightCm} cm tall · {plant.potDiameterCm} cm pot</span>
+                              <div class="qty" role="group" aria-label={`${plant.name} quantity`}>
+                                <button type="button" class="qty-step" data-qty-plant={plant.id} data-qty-step="-1" aria-label={`Fewer ${plant.name}`}>−</button>
+                                <input type="number" class="qty-input" data-qty-input={plant.id} min="0" max="8" step="1" value="0" inputmode="numeric" aria-label={`${plant.name} quantity`} />
+                                <button type="button" class="qty-step" data-qty-plant={plant.id} data-qty-step="1" aria-label={`More ${plant.name}`}>+</button>
+                              </div>
+                            </div>
+                            <button type="button" class="preview-expand preview-plant-expand" data-plant-image={plant.id} aria-label={`View ${plant.name} photo full screen`}>View full screen</button>
+                          </div>
+                        ))}
+                      </div>
+                    </fieldset>
+                    <small class="field-error" id="makeover-error" role="status"></small>
+                  </div>
+                  <div class="field-pair preview-options">
+                    <div class="field"><label for="preview-style">Style</label><div class="select-shell"><select id="preview-style" name="style"><option value="">Choose a style</option>{catalog.styles.map((style) => <option value={style.id}>{style.label}</option>)}</select></div></div>
+                    <div class="field" id="preview-placement-field"><label for="preview-placement">Placement</label><div class="select-shell"><select id="preview-placement" name="placement" disabled><option value="">Choose a plant first</option></select></div></div>
+                  </div>
+                  <small class="field-error" id="preview-choice-error" role="status"></small>
+                  <button class="button button-green preview-generate" id="preview-generate" type="button"><span id="preview-generate-label">Create my preview</span> <ArrowIcon direction="up-right" /></button>
+                  <p class="preview-feedback" id="preview-status" role="status" aria-live="polite" hidden></p>
+                  <p class="field-error preview-error" id="preview-error" role="alert" tabindex="-1" hidden></p>
+                  <div class="preview-result" id="preview-result" hidden>
+                    <p class="preview-result-title" id="preview-result-title"></p>
+                    <p class="preview-ai-label" id="preview-ai-label">Approximate AI preview. Plant size and placement may differ in real life.</p>
+                    <div class="preview-images"><figure><img id="preview-before" alt="Your room before adding a plant" /><figcaption><span>Before</span><button type="button" class="preview-expand" data-preview-image="before" aria-label="View before photo full screen">View full screen</button></figcaption></figure><figure><img id="preview-after" alt="AI preview of your room with the selected plant" /><figcaption><span>After</span><button type="button" class="preview-expand" data-preview-image="after" aria-label="View after photo full screen">View full screen</button></figcaption></figure></div>
+                    <div class="preview-design" id="preview-design" hidden>
+                      <h5 class="preview-design-title">How we designed it</h5>
+                      <p id="preview-rationale"></p>
+                      <ul class="preview-design-list" id="preview-moves" aria-label="Furniture changes"></ul>
+                      <ul class="preview-design-list" id="preview-spots" aria-label="Where each plant goes"></ul>
+                    </div>
+                    <div class="preview-result-actions"><button type="button" class="wizard-back" id="preview-again">Try another look</button><a id="preview-share" href="/#enquiry">Share this preview</a></div>
+                    <p class="preview-link-note">Anyone with this result link can view your room photo and preview.</p>
+                  </div>
+                </section>
                 <div class="field"><label for="notes">Anything else we should know? <span class="optional-label">Optional</span></label><textarea id="notes" name="notes" rows="4" placeholder="Tell us about your space, ideas, or questions..."></textarea></div>
                 <div class="wizard-actions"><button class="wizard-back" type="button" data-back><ArrowIcon direction="left" /> Back</button><button class="button button-green" type="button" data-next>Continue to contact <span aria-hidden="true"><ArrowIcon direction="right" /></span></button></div>
               </div>
@@ -308,11 +347,19 @@ const questions = [
                 <div class="field"><label for="name">Your name <span class="required-label">(required)</span></label><input id="name" aria-describedby="name-error" name="name" type="text" autocomplete="name" placeholder="Your full name" required /><small class="field-error" id="name-error" role="status"></small></div>
                 <fieldset class="field"><legend>How should we contact you? <span class="required-label">(required)</span></legend><div class="choice-row"><label><input type="radio" name="contactMethod" value="Email" checked /> Email</label><label><input type="radio" name="contactMethod" value="Phone" /> Phone</label></div></fieldset>
                 <div class="field"><label for="contact" id="contact-label">Email address <span class="required-label">(required)</span></label><input id="contact" aria-describedby="contact-error" name="contact" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" required /><small class="field-error" id="contact-error" role="status"></small></div>
-                <div class="wizard-actions"><button class="wizard-back" type="button" data-back><ArrowIcon direction="left" /> Back</button><button class="button button-green" type="submit">Preview your request <span aria-hidden="true"><ArrowIcon direction="up-right" /></span></button></div>
-                <p class="form-disclaimer">UI preview only. Your enquiry won’t be sent yet.</p>
+                <div class="wizard-actions"><button class="wizard-back" type="button" data-back><ArrowIcon direction="left" /> Back</button><button class="button button-green" id="enquiry-submit" type="submit">Send your request <span aria-hidden="true"><ArrowIcon direction="up-right" /></span></button></div>
+                <p class="preview-feedback" id="submit-status" role="status" hidden></p>
+                <p class="field-error submit-error" id="submit-error" role="alert" tabindex="-1" hidden></p>
+                <p class="form-disclaimer">We'll use these details to follow up about your plant plan.</p>
               </div>
             </form>
-            <div class="form-success" id="form-success" hidden tabindex="-1"><span class="success-mark" aria-hidden="true">✓</span><h3>Your plan request is ready.</h3><p>This is a preview of the form experience. No enquiry was sent.</p><div id="request-summary"></div><button type="button" id="start-again" class="button button-dark">Start a new request <span aria-hidden="true"><ArrowIcon direction="up-right" /></span></button></div>
+            <dialog class="preview-lightbox" id="preview-lightbox" aria-label="Full screen preview photo">
+              <div class="preview-lightbox-inner">
+                <div class="preview-lightbox-bar"><span id="preview-lightbox-title"></span><button type="button" id="preview-lightbox-close" aria-label="Close full screen photo">Close <span aria-hidden="true">×</span></button></div>
+                <img id="preview-lightbox-image" alt="" />
+              </div>
+            </dialog>
+            <div class="form-success" id="form-success" hidden tabindex="-1"><span class="success-mark" aria-hidden="true">✓</span><h3>Request sent.</h3><p>Thanks. We'll use your details to follow up about your plant plan.</p><div id="request-summary"></div><button type="button" id="start-again" class="button button-dark">Start a new request <span aria-hidden="true"><ArrowIcon direction="up-right" /></span></button></div>
           </div>
         </div>
       </section>
@@ -331,7 +378,7 @@ const questions = [
             <article class="step"><span class="step-number">02</span><div class="step-rule"></div><h3>Explore your options</h3><p>We recommend a curated plant package suited to your conditions, style, and budget. You choose what feels right.</p></article>
             <article class="step"><span class="step-number">03</span><div class="step-rule"></div><h3>Find their place</h3><p>We plan placement around your layout and flow, with support to help your new plants settle in.</p></article>
           </div>
-          <a class="button button-cream" href="#enquiry">Let’s plan your space <span aria-hidden="true"><ArrowIcon direction="up-right" /></span></a>
+          <a class="button button-cream" href="/#enquiry">Let’s plan your space <span aria-hidden="true"><ArrowIcon direction="up-right" /></span></a>
         </div>
       </section>
 
@@ -353,33 +400,11 @@ const questions = [
         </div>
       </section>
 
-    </main>
-
-    <footer class="site-footer"><div class="container footer-inner"><div><a class="brand footer-brand" href="#top"><span class="brand-mark" aria-hidden="true"><span></span><span></span></span><span>plantliner<span class="brand-dot">.</span></span></a><p>The right fit for every plant need.</p></div><nav aria-label="Footer navigation"><a href="#solutions">Solutions</a><a href="#how-it-works">How it works</a><a href="#faq">FAQ</a><a href="#enquiry">Get in touch</a></nav></div><div class="container footer-bottom"><span>© {new Date().getFullYear()} Plantliner</span><span>Made for spaces that grow.</span><a href="#top">Back to top <ArrowIcon direction="up" /></a></div></footer>
     <script>
-      const menuButton = document.querySelector<HTMLButtonElement>('.menu-toggle');
-      const mobileNav = document.querySelector<HTMLElement>('.mobile-nav');
-      menuButton?.addEventListener('click', () => {
-        const expanded = menuButton.getAttribute('aria-expanded') === 'true';
-        menuButton.setAttribute('aria-expanded', String(!expanded));
-        menuButton.setAttribute('aria-label', expanded ? 'Open menu' : 'Close menu');
-        if (mobileNav) mobileNav.hidden = expanded;
-      });
-      const closeMenu = () => {
-        if (!mobileNav || mobileNav.hidden) return;
-        mobileNav.hidden = true;
-        menuButton?.setAttribute('aria-expanded', 'false');
-        menuButton?.setAttribute('aria-label', 'Open menu');
-      };
-      mobileNav?.querySelectorAll('a').forEach((link) => link.addEventListener('click', closeMenu));
-      document.addEventListener('keydown', (event) => {
-        if (event.key !== 'Escape' || !mobileNav || mobileNav.hidden) return;
-        closeMenu();
-        menuButton?.focus();
-      });
-      document.addEventListener('click', (event) => {
-        if (!document.querySelector('.site-header')?.contains(event.target as Node)) closeMenu();
-      });
+      import { initPlantPlan } from '../scripts/plantPlan';
+      const PREVIEW_ENABLED = true;
+      const MAKEOVER_ENABLED = true; // Preview trial; Production requires G0/G1 and approved product photos
+      initPlantPlan(PREVIEW_ENABLED, MAKEOVER_ENABLED);
 
       // Native centered snapping owns touch momentum; controls and mouse drag share its targets.
       const solutions = document.querySelector<HTMLElement>('.solutions-section');
@@ -553,141 +578,5 @@ const questions = [
         });
       }
 
-      const form = document.querySelector<HTMLFormElement>('#plant-plan-form');
-      const contact = document.querySelector<HTMLInputElement>('#contact');
-      const contactLabel = document.querySelector<HTMLLabelElement>('#contact-label');
-      const photo = document.querySelector<HTMLInputElement>('#photo');
-      const photoLabel = document.querySelector<HTMLElement>('#photo-label');
-      const success = document.querySelector<HTMLElement>('#form-success');
-      const formSteps = [...document.querySelectorAll<HTMLElement>('.form-step')];
-      const progressItems = [...document.querySelectorAll<HTMLElement>('.wizard-progress li')];
-      const stepCount = document.querySelector<HTMLElement>('#step-count');
-      const progressFill = document.querySelector<HTMLElement>('#progress-fill');
-      let currentStep = 0;
-
-      const showStep = (step: number, focus = true) => {
-        currentStep = step;
-        formSteps.forEach((panel, index) => { panel.hidden = index !== step; });
-        progressItems.forEach((item, index) => {
-          item.classList.toggle('is-complete', index < step);
-          if (index === step) item.setAttribute('aria-current', 'step');
-          else item.removeAttribute('aria-current');
-        });
-        if (stepCount) stepCount.textContent = `0${step + 1} / 03`;
-        if (progressFill) progressFill.style.transform = `scaleX(${(step + 1) / formSteps.length})`;
-        if (focus) formSteps[step]?.querySelector<HTMLElement>('h3')?.focus();
-      };
-
-      const clearError = (field: HTMLElement, errorId: string) => {
-        field.removeAttribute('aria-invalid');
-        const error = document.querySelector<HTMLElement>(`#${errorId}`);
-        if (error) error.textContent = '';
-      };
-
-      const validateStep = (step: number) => {
-        if (step === 0) {
-          const chosenSpace = form?.querySelector<HTMLInputElement>('input[name="space"]:checked');
-          if (chosenSpace) return true;
-          document.querySelector<HTMLElement>('#space-error')!.textContent = 'Please choose a type of space.';
-          form?.querySelector<HTMLInputElement>('input[name="space"]')?.focus();
-          return false;
-        }
-        if (step === 1) {
-          const chosenPhoto = photo?.files?.[0];
-          if (!chosenPhoto) return true;
-          const validType = ['image/jpeg', 'image/png', 'image/webp'].includes(chosenPhoto.type);
-          const error = document.querySelector<HTMLElement>('#photo-error')!;
-          error.textContent = !validType ? 'Choose a JPG, PNG, or WebP image.' : chosenPhoto.size > 10 * 1024 * 1024 ? 'Please choose a photo under 10 MB.' : '';
-          if (!error.textContent) return true;
-          photo?.focus();
-          return false;
-        }
-        const name = document.querySelector<HTMLInputElement>('#name')!;
-        clearError(name, 'name-error');
-        if (contact) clearError(contact, 'contact-error');
-        let firstInvalid: HTMLElement | undefined;
-        if (!name.value.trim()) { document.querySelector<HTMLElement>('#name-error')!.textContent = 'Please enter your name.'; name.setAttribute('aria-invalid', 'true'); firstInvalid = name; }
-        if (!contact?.value.trim() || !contact.checkValidity()) {
-          document.querySelector<HTMLElement>('#contact-error')!.textContent = contact?.type === 'tel' ? 'Please enter a valid phone number.' : 'Please enter a valid email address.';
-          contact?.setAttribute('aria-invalid', 'true');
-          firstInvalid ||= contact || undefined;
-        }
-        firstInvalid?.focus();
-        return !firstInvalid;
-      };
-
-      form?.querySelectorAll<HTMLInputElement>('input[name="space"]').forEach((radio) => radio.addEventListener('change', () => {
-        document.querySelector<HTMLElement>('#space-error')!.textContent = '';
-      }));
-      form?.querySelectorAll<HTMLButtonElement>('[data-next]').forEach((button) => button.addEventListener('click', () => {
-        if (validateStep(currentStep)) showStep(currentStep + 1);
-      }));
-      form?.querySelectorAll<HTMLButtonElement>('[data-back]').forEach((button) => button.addEventListener('click', () => showStep(currentStep - 1)));
-
-      document.querySelectorAll<HTMLInputElement>('input[name="contactMethod"]').forEach((radio) => radio.addEventListener('change', () => {
-        if (!contact || !contactLabel) return;
-        const isPhone = radio.checked && radio.value === 'Phone';
-        if (!radio.checked) return;
-        contact.type = isPhone ? 'tel' : 'email';
-        contact.inputMode = isPhone ? 'tel' : 'email';
-        contact.autocomplete = isPhone ? 'tel' : 'email';
-        contact.placeholder = isPhone ? 'Your phone number' : 'you@example.com';
-        // type="tel" validates nothing; escaped for the v-flag regex browsers use for pattern
-        if (isPhone) contact.pattern = '[0-9 +\\(\\)\\-]{7,}';
-        else contact.removeAttribute('pattern');
-        contactLabel.innerHTML = `${isPhone ? 'Phone number' : 'Email address'} <span class="required-label">(required)</span>`;
-        contact.value = '';
-        clearError(contact, 'contact-error');
-      }));
-
-      document.querySelectorAll<HTMLAnchorElement>('[data-space]').forEach((link) => link.addEventListener('click', () => {
-        const space = form?.querySelector<HTMLInputElement>(`input[name="space"][value="${link.dataset.space}"]`);
-        if (space) { space.checked = true; document.querySelector<HTMLElement>('#space-error')!.textContent = ''; }
-        if (success) success.hidden = true;
-        if (form) form.hidden = false;
-        showStep(0, false);
-      }));
-
-      document.querySelectorAll<HTMLElement>('#name, #contact').forEach((field) => field.addEventListener('input', () => {
-        clearError(field, `${field.id}-error`);
-      }));
-
-      photo?.addEventListener('change', () => {
-        if (photoLabel) photoLabel.textContent = photo.files?.[0]?.name || 'Choose a photo to share';
-        document.querySelector('#photo-error')!.textContent = '';
-      });
-
-      form?.addEventListener('submit', (event) => {
-        event.preventDefault();
-        if (!validateStep(currentStep)) return;
-        if (currentStep < formSteps.length - 1) { showStep(currentStep + 1); return; }
-        const method = document.querySelector<HTMLInputElement>('input[name="contactMethod"]:checked')?.value || 'Email';
-        const chosenSpace = form.querySelector<HTMLInputElement>('input[name="space"]:checked');
-        const summary = document.querySelector<HTMLElement>('#request-summary');
-        if (summary) {
-          summary.replaceChildren();
-          const rows = [
-            ['Space', chosenSpace?.closest('label')?.querySelector('span')?.textContent || 'Your space'],
-            ['Contact by', method],
-            ['Light', (document.querySelector<HTMLSelectElement>('#light')?.selectedOptions[0]?.text || 'Not sure')],
-          ];
-          rows.forEach(([label, value]) => { const row = document.createElement('p'); const key = document.createElement('strong'); key.textContent = label; row.append(key, document.createTextNode(value)); summary.append(row); });
-        }
-        form.hidden = true;
-        if (success) { success.hidden = false; success.focus(); }
-      });
-
-      document.querySelector('#start-again')?.addEventListener('click', () => {
-        form?.reset();
-        if (contact) { contact.type = 'email'; contact.inputMode = 'email'; contact.autocomplete = 'email'; contact.placeholder = 'you@example.com'; contact.removeAttribute('pattern'); }
-        if (contactLabel) contactLabel.innerHTML = 'Email address <span class="required-label">(required)</span>';
-        if (photoLabel) photoLabel.textContent = 'Choose a photo to share';
-        document.querySelectorAll('.field-error').forEach((error) => { error.textContent = ''; });
-        document.querySelectorAll('[aria-invalid]').forEach((field) => field.removeAttribute('aria-invalid'));
-        if (success) success.hidden = true;
-        if (form) form.hidden = false;
-        showStep(0);
-      });
     </script>
-  </body>
-</html>
+</BaseLayout>

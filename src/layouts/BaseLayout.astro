@@ -1,0 +1,79 @@
+---
+import ArrowIcon from '../components/ArrowIcon.astro';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+}
+const { title, description } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f5f4ed" />
+    <meta name="description" content={description} />
+    <title>{title}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header" id="top">
+      <div class="header-inner container">
+        <a class="brand" href="/#top" aria-label="Plantliner home">
+          <span class="brand-mark" aria-hidden="true"><span></span><span></span></span>
+          <span>plantliner<span class="brand-dot">.</span></span>
+        </a>
+        <nav class="desktop-nav" aria-label="Main navigation">
+          <a href="/#solutions">Solutions</a>
+          <a href="/#how-it-works">How it works</a>
+          <a href="/#faq">FAQ</a>
+        </nav>
+        <a class="button button-dark header-cta" href="/#enquiry">Request a plant plan <span aria-hidden="true"><ArrowIcon direction="up-right" /></span></a>
+        <button class="menu-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav">
+          <span></span><span></span>
+        </button>
+      </div>
+      <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation" hidden>
+        <a href="/#solutions">Solutions</a>
+        <a href="/#how-it-works">How it works</a>
+        <a href="/#faq">FAQ</a>
+        <a href="/#enquiry">Request a plant plan</a>
+      </nav>
+    </header>
+
+    <main id="main"><slot /></main>
+
+    <footer class="site-footer"><div class="container footer-inner"><div><a class="brand footer-brand" href="/#top"><span class="brand-mark" aria-hidden="true"><span></span><span></span></span><span>plantliner<span class="brand-dot">.</span></span></a><p>The right fit for every plant need.</p></div><nav aria-label="Footer navigation"><a href="/#solutions">Solutions</a><a href="/#how-it-works">How it works</a><a href="/#faq">FAQ</a><a href="/#enquiry">Get in touch</a></nav></div><div class="container footer-bottom"><span>© {new Date().getFullYear()} Plantliner</span><span>Made for spaces that grow.</span><a href="/#top">Back to top <ArrowIcon direction="up" /></a></div></footer>
+    <script>
+      const menuButton = document.querySelector<HTMLButtonElement>('.menu-toggle');
+      const mobileNav = document.querySelector<HTMLElement>('.mobile-nav');
+      menuButton?.addEventListener('click', () => {
+        const expanded = menuButton.getAttribute('aria-expanded') === 'true';
+        menuButton.setAttribute('aria-expanded', String(!expanded));
+        menuButton.setAttribute('aria-label', expanded ? 'Open menu' : 'Close menu');
+        if (mobileNav) mobileNav.hidden = expanded;
+      });
+      const closeMenu = () => {
+        if (!mobileNav || mobileNav.hidden) return;
+        mobileNav.hidden = true;
+        menuButton?.setAttribute('aria-expanded', 'false');
+        menuButton?.setAttribute('aria-label', 'Open menu');
+      };
+      mobileNav?.querySelectorAll('a').forEach((link) => link.addEventListener('click', closeMenu));
+      document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape' || !mobileNav || mobileNav.hidden) return;
+        closeMenu();
+        menuButton?.focus();
+      });
+      document.addEventListener('click', (event) => {
+        if (!document.querySelector('.site-header')?.contains(event.target as Node)) closeMenu();
+      });
+    </script>
+  </body>
+</html>
