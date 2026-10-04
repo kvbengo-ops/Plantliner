@@ -3,3 +3,8 @@ dist/
 .astro/
 .env
 .env.*
+functions/lib/
+functions/src/catalog.json
+.firebase/
+*-debug.log
+.api-build/

@@ -1,0 +1,34 @@
+{
+  "spaceTypes": [
+    { "id": "office", "label": "Office" },
+    { "id": "cafe", "label": "Café" },
+    { "id": "school", "label": "School" },
+    { "id": "retail", "label": "Retail space" },
+    { "id": "other", "label": "Something else" }
+  ],
+  "styles": [
+    { "id": "minimalist", "label": "Minimalist", "prompt": "calm and uncluttered, with clear space around the plant" },
+    { "id": "japandi", "label": "Japandi", "prompt": "quiet, natural and balanced, placed with restraint" },
+    { "id": "scandinavian", "label": "Scandinavian", "prompt": "light, airy and homely" },
+    { "id": "modern-corporate", "label": "Modern corporate", "prompt": "tidy, professional and symmetrical where the room allows" },
+    { "id": "organic-modern", "label": "Organic modern", "prompt": "soft, natural and relaxed" },
+    { "id": "industrial", "label": "Industrial", "prompt": "robust and unfussy, comfortable next to raw materials" },
+    { "id": "luxury", "label": "Luxury", "prompt": "deliberate and statement-making, given generous space" }
+  ],
+  "placements": [
+    { "id": "auto", "label": "Let AI decide", "prompt": "wherever it looks most natural" },
+    { "id": "floor", "label": "On the floor", "prompt": "standing on an open area of the floor" },
+    { "id": "corner", "label": "In a corner", "prompt": "standing on the floor in an empty corner" },
+    { "id": "window", "label": "Near a window", "prompt": "near a window" },
+    { "id": "desk", "label": "On a desk or table", "prompt": "on top of an existing desk or table" },
+    { "id": "cabinet", "label": "On a cabinet or shelf", "prompt": "on top of an existing cabinet or shelf" },
+    { "id": "entrance", "label": "By the entrance", "prompt": "beside the entrance or reception area" }
+  ],
+  "plants": [
+    { "id": "snake-plant", "name": "Snake Plant", "image": "/images/plants/snake-plant.jpg", "heightCm": 80, "potDiameterCm": 25, "placements": ["floor", "corner", "entrance"], "description": "Upright, architectural leaves. Happy in low light." },
+    { "id": "zz-plant", "name": "ZZ Plant", "image": "/images/plants/zz-plant.jpg", "heightCm": 60, "potDiameterCm": 22, "placements": ["floor", "cabinet", "entrance"], "description": "Glossy, forgiving and fine under office lighting." },
+    { "id": "monstera", "name": "Monstera", "image": "/images/plants/monstera.jpg", "heightCm": 120, "potDiameterCm": 30, "placements": ["floor", "corner", "window"], "description": "Big split leaves for a relaxed statement." },
+    { "id": "fiddle-leaf-fig", "name": "Fiddle Leaf Fig", "image": "/images/plants/fiddle-leaf-fig.jpg", "heightCm": 150, "potDiameterCm": 30, "placements": ["floor", "window", "corner"], "description": "A tall feature plant for bright spots." },
+    { "id": "barrel-cactus", "name": "Barrel Cactus", "image": "/images/plants/barrel-cactus.jpg", "heightCm": 25, "potDiameterCm": 18, "placements": ["desk", "cabinet", "window"], "description": "Compact and sculptural. Loves sun." }
+  ]
+}

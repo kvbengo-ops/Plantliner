@@ -7,13 +7,16 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "check": "astro check"
+    "check": "astro check",
+    "test:api": "tsc -p api/tsconfig.json && node --test \".api-build/api/**/*.test.js\""
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.117.2",
     "astro": "^6.0.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.0",
+    "@types/node": "^22.20.5",
     "typescript": "^5.0.0"
   }
 }
