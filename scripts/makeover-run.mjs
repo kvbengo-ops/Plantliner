@@ -30,12 +30,17 @@ if (process.env.LIVE !== '1') {
 await mkdir(outDir, { recursive: true });
 const rows = [];
 const row = (name, status, seconds) => `| ${name} | ${status} | ${seconds} |  |  |  |  |  |`;
+const header = ['| Run | Status | Time | Room kept | Furniture sensible | Species and counts | Walkways clear | Notes |', '|---|---|---|---|---|---|---|---|'];
+// Written after every run, so a crash or Ctrl-C keeps what has already been paid for.
+const save = () => writeFile(`${outDir}/scorecard.md`, [...header, ...rows].join('\n') + '\n');
+const pollMs = Number(process.env.POLL_MS || 6_000);
 for (const run of runs) {
   const started = Date.now();
   const image = (await readFile(run.photo)).toString('base64');
   if (image.length > 4_400_000) { // Vercel rejects request bodies over 4.5 MB
     console.log(`${run.name}: skipped, ${run.photo} is too large; resize it to about 2048 px first`);
     rows.push(row(run.name, 'skipped: photo too large', '-'));
+    await save();
     continue;
   }
   const body = { mode: 'makeover', image, spaceType: run.spaceType, style: run.style, items: run.items, dims: run.dims };
@@ -45,12 +50,21 @@ for (const run of runs) {
     // 502 means the designer or Kie failed to start; the reason is in the visualizations.error column in Supabase.
     console.log(`${run.name}: create failed (HTTP ${create.status}) ${created.error ?? ''}`);
     rows.push(row(run.name, `create failed ${create.status}`, '-'));
+    await save();
+    if (create.status === 429) {
+      // The limits are per visitor (5 a day) and in total (shared with real visitors if they share this database). More runs would only fail.
+      console.log('Stopping: HTTP 429 means a daily limit is reached. Continue tomorrow, or ask the owner to raise the limit for this Preview.');
+      break;
+    }
     continue;
   }
   let result = { status: 'processing' };
   while (Date.now() - started < 11 * 60_000) {
-    await new Promise((resolve) => setTimeout(resolve, 6_000));
-    result = await (await fetch(`${base}/api/visualizations/${created.id}`, { headers })).json();
+    await new Promise((resolve) => setTimeout(resolve, pollMs));
+    // A dropped or garbled reply (a gateway page, say) is retried on the next turn, not fatal.
+    const polled = await fetch(`${base}/api/visualizations/${created.id}`, { headers }).then((response) => response.json()).catch(() => null);
+    if (!polled) continue;
+    result = polled;
     if (result.status !== 'processing') break;
   }
   const seconds = Math.round((Date.now() - started) / 1000);
@@ -62,7 +76,7 @@ for (const run of runs) {
   }
   console.log(`${run.name}: ${result.status} in ${seconds}s`);
   rows.push(row(run.name, result.status, `${seconds}s`));
+  await save();
 }
-const header = ['| Run | Status | Time | Room kept | Furniture sensible | Species and counts | Walkways clear | Notes |', '|---|---|---|---|---|---|---|---|'];
-await writeFile(`${outDir}/scorecard.md`, [...header, ...rows].join('\n') + '\n');
+await save();
 console.log(`Scorecard template: ${outDir}/scorecard.md. Pass = all four checks ticked; the gate needs 7 of 10.`);

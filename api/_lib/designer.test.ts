@@ -23,6 +23,12 @@ test('accepts a good plan, tidies whitespace and control characters', () => {
   assert.equal(result.value.rationale, 'Calm and balanced.');
   assert.deepEqual(result.value.plants, good.plants);
   assert.ok(parsePlan({ ...good, furniture: [] }, items).ok); // nothing needs to move
+  // Invisible and direction-changing characters are dropped, so they cannot hide or reorder text.
+  const hidden = parsePlan({ ...good, rationale: 'Calm\u200B and \u202Ebalanced.\u0085Open.' }, items);
+  assert.ok(hidden.ok);
+  assert.equal(hidden.value.rationale, 'Calm and balanced. Open.');
+  // Ordinary design wording is not mistaken for a link.
+  assert.ok(parsePlan({ ...good, furniture: ['Move the long table against the left wall.', 'Turn the sofas toward the window, e.g. at an angle.'] }, items).ok);
 });
 
 test('rejects anything that is not exactly what was asked for', () => {
@@ -47,6 +53,12 @@ test('rejects anything that is not exactly what was asked for', () => {
     'requested product missing': { ...good, plants: [plant] },
     'fractional count': { ...good, plants: [{ ...plant, count: 1.5 }, good.plants[1]] },
     'missing why': { ...good, plants: [{ ...plant, why: '' }, good.plants[1]] },
+    'the word http on its own': { ...good, rationale: 'See http for details' },
+    'scheme split by a space': { ...good, rationale: 'Visit https //evil.example today' },
+    'scheme split by zero-width space': { ...good, rationale: 'Visit ht\u200Btp://evil.example today' },
+    'bare domain in a note': { ...good, furniture: ['Offers at bit.ly/abc'] },
+    'bare domain with a path in a why': { ...good, plants: [{ ...plant, why: 'Details at evil.com/pay' }, good.plants[1]] },
+    'markdown link': { ...good, rationale: 'Click [here](evil) for the plan' },
   };
   for (const [name, plan] of Object.entries(rejected)) assert.equal(parsePlan(plan, items).ok, false, name);
 });
@@ -74,6 +86,8 @@ test('the request is catalog data plus fixed text, with the room as an image', (
   assert.match(text.text, /Space: Café/);
   assert.match(text.text, /roughly 6 m by 4 m/);
   assert.match(text.text, /floor, corner, window, desk, cabinet, entrance/); // never "auto"
+  assert.doesNotMatch(text.text, /armchair|sofa|couch/i); // a concrete example gets copied even when the photo has none
+  assert.match(text.text, /that you can actually see/);
 });
 
 const realFetch = globalThis.fetch;

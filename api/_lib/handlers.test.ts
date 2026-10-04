@@ -118,9 +118,8 @@ test('a single-plant request is unchanged: no Groq, the original prompt, one ref
   assert.equal(kie.image_urls.length, 2);
   assert.match(kie.prompt, /Add exactly one Snake Plant/);
   const row = insertedRow();
-  assert.equal(row.mode, 'single');
-  assert.equal(row.plan, null);
-  assert.equal(row.rationale, null);
+  // No makeover columns on a single row, so it still inserts on a database that has not run migration 0002.
+  assert.ok(!('mode' in row) && !('plan' in row) && !('rationale' in row), 'single row carries makeover columns');
   assert.deepEqual(row.items, [{ productId: 'snake-plant', quantity: 1 }]);
 });
 

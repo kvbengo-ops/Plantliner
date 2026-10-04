@@ -46,7 +46,7 @@ export function buildMakeoverPrompt({ space, style, items, plan, dims }: { space
     `Edit the first image, a photo of a real ${room}. The other images are reference photos of potted plants: ${references}.`,
     "Keep the room's architecture exactly as it is: walls, windows, doors, floor, ceiling, fixed fittings, lighting, camera angle, perspective and framing.",
     furniture,
-    `Add exactly these plants and no others. Each must clearly be the plant in its reference photo: same species, leaf shape, colours and pot.\n${plants}`,
+    `Add exactly these plants and no others. Do not add any other plants or decorations. Each must clearly be the plant in its reference photo: same species, leaf shape, colours and pot.\n${plants}`,
     `Scale everything realistically against the furniture and doors. ${size}`.trim(),
     "Match the room's light direction, colour temperature and shadows, and give every pot a soft, realistic contact shadow.",
     `Design direction: ${style.label}, ${style.prompt}. Use this only to guide how the layout feels; do not restyle the room.`,

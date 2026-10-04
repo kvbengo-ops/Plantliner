@@ -59,6 +59,7 @@ test('makeover prompt numbers the reference photos, names every plant with count
   assert.match(prompt, /- Turn the two armchairs to face the window/);
   assert.match(prompt, /Do not add, remove, duplicate or restyle any furniture/);
   assert.match(prompt, /architecture exactly as it is/);
+  assert.match(prompt, /Do not add any other plants or decorations/);
   assert.match(prompt, /Design direction: Japandi/);
   assert.match(prompt, /ceiling is about 2\.7 m high/);
   assert.doesNotMatch(prompt, /Balanced|\bx\b\.|\by\b\./); // the rationale and per-plant notes are for the customer, not the image model

@@ -25,9 +25,10 @@ type Row = {
   model: string;
   task_id: string | null;
   prompt: string;
-  mode: 'single' | 'makeover';
-  plan: Plan | null;
-  rationale: string | null;
+  // Only makeover rows carry these, so single-plant requests still insert on a database that has not run migration 0002.
+  mode?: 'single' | 'makeover';
+  plan?: Plan | null;
+  rationale?: string | null;
   error: string | null;
   ip_key: string;
   created_at: number;
@@ -81,9 +82,7 @@ export async function createVisualization(body: unknown, request: Request): Prom
     model: MODEL,
     task_id: null,
     prompt: input.mode === 'single' ? buildPrompt(input) : '', // a makeover prompt needs the designer's plan, set below
-    mode: input.mode,
-    plan: null,
-    rationale: null,
+    ...(input.mode === 'makeover' ? { mode: 'makeover' as const, plan: null, rationale: null } : {}),
     error: null,
     ip_key: ipKey,
     created_at: now,
@@ -138,10 +137,10 @@ export async function getVisualization(id: string): Promise<Reply> {
   const done = v.status === 'succeeded';
   return [200, {
     status: v.status,
-    mode: v.mode,
+    mode: v.mode ?? 'single',
     items: v.items,
     choices: { spaceType: v.space_type, style: v.style, placement: v.placement },
-    rationale: v.rationale,
+    rationale: v.rationale ?? null,
     layout: v.plan ? { furniture: v.plan.furniture, plants: v.plan.plants } : null,
     before: done ? await signedUrl(`visualizations/${id}/room.jpg`, 60) : null,
     after: done ? await signedUrl(`visualizations/${id}/result.png`, 60) : null,
