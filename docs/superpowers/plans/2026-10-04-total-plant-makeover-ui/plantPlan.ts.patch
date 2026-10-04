@@ -1,0 +1,326 @@
+--- a/src/scripts/plantPlan.ts
++++ b/src/scripts/plantPlan.ts
+@@ -1,14 +1,24 @@
+ import catalog from '../data/catalog.json';
+ import { toJpegBase64 } from './photo';
++import { MAX_PLANTS, capQuantity, fromItems, summarise, toItems, total, type Quantities } from './makeover';
+ 
++type Layout = { furniture: string[]; plants: { productId: string; count: number; placement: string; why: string }[] };
+ type Visualization = {
+   status: 'processing' | 'succeeded' | 'failed';
++  mode?: 'single' | 'makeover'; // absent on previews saved before the makeover existed
+   items: { productId: string; quantity: number }[];
+   choices: { spaceType: string; style: string; placement: string };
++  rationale?: string | null;
++  layout?: Layout | null;
+   before: string | null;
+   after: string | null;
+ };
+ 
++const AI_LABEL = 'Approximate AI preview. Plant size and placement may differ in real life.';
++const SINGLE_INTRO = 'Choose one plant, a style, and a spot. Add a room photo above to see an approximate AI preview. You can continue without creating one.';
++const PRIVACY_WITH_MAKEOVER = 'Your photo is processed by our AI providers (Kie, and Groq for a makeover) to create the preview.';
++const MAKEOVER_INTRO = 'Choose your plants and how many of each. We rearrange the seating and tables around them and explain why. Add a room photo above to see an approximate AI preview. You can continue without creating one.';
++
+ const ID_PATTERN = /^[A-Za-z0-9]{20}$/;
+ const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+ const REQUEST_PHOTO_LIMIT = 10 * 1024 * 1024;
+@@ -48,7 +58,7 @@
+   try { return new URL(value).protocol === 'https:'; } catch { return false; }
+ }
+ 
+-export function initPlantPlan(previewEnabled: boolean): void {
++export function initPlantPlan(previewEnabled: boolean, makeoverEnabled = false): void {
+   const form = element<HTMLFormElement>('#plant-plan-form');
+   const contact = element<HTMLInputElement>('#contact');
+   const contactLabel = element<HTMLLabelElement>('#contact-label');
+@@ -86,14 +96,34 @@
+   const notes = element<HTMLTextAreaElement>('#notes');
+   const light = element<HTMLSelectElement>('#light');
+   const size = element<HTMLSelectElement>('#size');
++  const modeGroup = element<HTMLElement>('#preview-modes');
++  const modeRadios = [...form.querySelectorAll<HTMLInputElement>('input[name="previewMode"]')];
++  const previewIntro = element<HTMLElement>('#preview-intro');
++  const privacy = element<HTMLElement>('#preview-privacy');
++  const singlePicker = element<HTMLElement>('#single-picker');
++  const makeoverPicker = element<HTMLElement>('#makeover-picker');
++  const placementField = element<HTMLElement>('#preview-placement-field');
++  const makeoverError = element<HTMLElement>('#makeover-error');
++  const makeoverTotal = element<HTMLElement>('#makeover-total');
++  const generateLabel = element<HTMLElement>('#preview-generate-label');
++  const qtyInputs = [...makeoverPicker.querySelectorAll<HTMLInputElement>('[data-qty-input]')];
++  const qtySteps = [...makeoverPicker.querySelectorAll<HTMLButtonElement>('[data-qty-step]')];
++  const aiLabel = element<HTMLElement>('#preview-ai-label');
++  const design = element<HTMLElement>('#preview-design');
++  const rationale = element<HTMLElement>('#preview-rationale');
++  const moves = element<HTMLElement>('#preview-moves');
++  const spots = element<HTMLElement>('#preview-spots');
+ 
+   previewSection.hidden = !previewEnabled;
+   previewEntry.hidden = !previewEnabled;
++  modeGroup.hidden = !(previewEnabled && makeoverEnabled);
++  if (makeoverEnabled) privacy.textContent = PRIVACY_WITH_MAKEOVER; // Groq only sees photos once the makeover exists
+   photoHint.textContent = previewEnabled
+     ? 'JPG, PNG, or WebP · up to 25 MB for a preview; 10 MB for a request without one'
+     : 'JPG, PNG, or WebP · up to 10 MB';
+ 
+   let currentStep = 0;
++  let mode: 'single' | 'makeover' = 'single';
+   let visualizationId: string | null = null;
+   let previewState: 'none' | Visualization['status'] = 'none';
+   let previewToken = 0;
+@@ -133,6 +163,37 @@
+   const chosenSpace = () => form.querySelector<HTMLInputElement>('input[name="space"]:checked');
+   const chosenPlant = () => form.querySelector<HTMLInputElement>('input[name="productId"]:checked');
+   const selectedPlant = () => catalog.plants.find((plant) => plant.id === chosenPlant()?.value);
++  const plantName = (productId: string) => catalog.plants.find((plant) => plant.id === productId)?.name ?? productId;
++  const quantities = (): Quantities => Object.fromEntries(qtyInputs.map((input) => [input.dataset.qtyInput!, Number(input.value) || 0]));
++  // Keeps the "N of 8" label, each input's max, the "−/+" availability and the highlighted cards in step with the numbers.
++  const renderQuantities = () => {
++    const current = quantities();
++    const count = total(current);
++    makeoverTotal.textContent = `${count} of ${MAX_PLANTS} plants`;
++    qtyInputs.forEach((input) => {
++      const id = input.dataset.qtyInput!;
++      input.max = String(current[id] + MAX_PLANTS - count);
++      input.closest('.makeover-card')?.classList.toggle('is-chosen', current[id] > 0);
++    });
++    // aria-disabled, not disabled: a button that disables itself under the keyboard drops focus.
++    qtySteps.forEach((button) => {
++      const atLimit = button.dataset.qtyStep === '1' ? count >= MAX_PLANTS : current[button.dataset.qtyPlant!] <= 0;
++      button.setAttribute('aria-disabled', String(atLimit));
++    });
++  };
++  const setQuantities = (next: Quantities) => {
++    qtyInputs.forEach((input) => { input.value = String(next[input.dataset.qtyInput!] ?? 0); });
++    renderQuantities();
++  };
++  const setMode = (next: 'single' | 'makeover') => {
++    mode = next;
++    modeRadios.forEach((radio) => { radio.checked = radio.value === next; });
++    singlePicker.hidden = next !== 'single';
++    makeoverPicker.hidden = next !== 'makeover';
++    placementField.hidden = next !== 'single';
++    previewIntro.textContent = next === 'single' ? SINGLE_INTRO : MAKEOVER_INTRO;
++    generateLabel.textContent = next === 'single' ? 'Create my preview' : 'Create my makeover';
++  };
+   const setMessage = (target: HTMLElement, message: string) => {
+     target.textContent = message;
+     target.hidden = !message;
+@@ -173,6 +234,7 @@
+     visualizationId = null;
+     previewState = 'none';
+     result.hidden = true;
++    design.hidden = true;
+     beforeImage.removeAttribute('src');
+     afterImage.removeAttribute('src');
+     shareLink.href = '/#enquiry';
+@@ -244,26 +306,60 @@
+     url.hash = 'enquiry';
+     return url.href;
+   };
++  // The "How we designed it" panel. Everything the model wrote goes in as text, never as HTML.
++  const renderDesign = (data: Visualization) => {
++    moves.replaceChildren();
++    spots.replaceChildren();
++    const layout = data.layout;
++    if (data.mode !== 'makeover' || typeof data.rationale !== 'string' || !data.rationale || !layout) { design.hidden = true; return; }
++    rationale.textContent = data.rationale;
++    (Array.isArray(layout.furniture) ? layout.furniture : []).forEach((note) => {
++      const item = document.createElement('li');
++      item.textContent = String(note);
++      moves.append(item);
++    });
++    (Array.isArray(layout.plants) ? layout.plants : []).forEach((spot) => {
++      const plant = catalog.plants.find((item) => item.id === spot.productId);
++      if (!plant) return;
++      const where = catalog.placements.find((item) => item.id === spot.placement);
++      const item = document.createElement('li');
++      const strong = document.createElement('strong');
++      strong.textContent = `${spot.count} × ${plant.name}`;
++      item.append(strong, document.createTextNode(`${where ? `, ${where.label.toLowerCase()}` : ''}. ${spot.why}`));
++      spots.append(item);
++    });
++    design.hidden = false;
++  };
+   const applyVisualization = (id: string, data: Visualization): boolean => {
++    const makeover = data.mode === 'makeover';
++    const restored = makeover ? fromItems(data.items) : null;
+     const productId = data.items?.[0]?.productId;
+     const plant = catalog.plants.find((item) => item.id === productId);
+     const space = catalog.spaceTypes.find((item) => item.id === data.choices?.spaceType);
+     const styleOption = catalog.styles.find((item) => item.id === data.choices?.style);
+-    if (!plant || !space || !styleOption || !['processing', 'succeeded', 'failed'].includes(data.status)) {
++    const choicesKnown = makeover
++      ? makeoverEnabled && !!restored && Object.keys(restored).every((key) => catalog.plants.some((item) => item.id === key))
++      : !!plant;
++    if (!choicesKnown || !space || !styleOption || !['processing', 'succeeded', 'failed'].includes(data.status)) {
+       clearPreview();
+       setMessage(previewError, 'This preview could not be restored because its choices are missing.');
+       return false;
+     }
+     const spaceRadio = form.querySelector<HTMLInputElement>(`input[name="space"][value="${space.id}"]`);
+-    const plantRadio = form.querySelector<HTMLInputElement>(`input[name="productId"][value="${plant.id}"]`);
+     if (spaceRadio) spaceRadio.checked = true;
+-    if (plantRadio) plantRadio.checked = true;
+     style.value = styleOption.id;
+-    updatePlacements(data.choices.placement);
+-    if (placement.value !== data.choices.placement) {
+-      clearPreview();
+-      setMessage(previewError, 'This preview has a placement that is not available for this plant.');
+-      return false;
++    setMode(makeover ? 'makeover' : 'single');
++    if (makeover) {
++      setQuantities(restored!);
++    } else {
++      const plantRadio = form.querySelector<HTMLInputElement>(`input[name="productId"][value="${plant!.id}"]`);
++      if (plantRadio) plantRadio.checked = true;
++      updatePlacements(data.choices.placement);
++      if (placement.value !== data.choices.placement) {
++        clearPreview();
++        setMessage(previewError, 'This preview has a placement that is not available for this plant.');
++        return false;
++      }
+     }
+     visualizationId = id;
+     previewState = data.status;
+@@ -276,7 +372,9 @@
+       }
+       beforeImage.src = data.before;
+       afterImage.src = data.after;
+-      resultTitle.textContent = `${plant.name} in your space`;
++      resultTitle.textContent = makeover ? `Your space, rearranged with ${total(restored!)} plants` : `${plant!.name} in your space`;
++      aiLabel.textContent = makeover ? `${AI_LABEL} The furniture moves are a suggestion, not a measured plan.` : AI_LABEL;
++      renderDesign(data);
+       shareLink.href = shareUrl(id);
+       result.hidden = false;
+       setMessage(previewStatusMessage, 'Your preview is ready.');
+@@ -376,27 +474,67 @@
+     }));
+     style.addEventListener('change', () => { setMessage(choiceError, ''); clearPreview(); });
+     placement.addEventListener('change', () => { setMessage(choiceError, ''); clearPreview(); });
++    modeRadios.forEach((radio) => radio.addEventListener('change', () => {
++      if (!radio.checked) return;
++      setMode(radio.value === 'makeover' ? 'makeover' : 'single');
++      setMessage(plantError, '');
++      setMessage(makeoverError, '');
++      setMessage(choiceError, '');
++      clearPreview();
++    }));
++    // Setting a quantity never lets the total pass the cap; changing anything invalidates an earlier preview.
++    const setQuantity = (productId: string, wanted: number) => {
++      const current = quantities();
++      const next = capQuantity(wanted, total(current) - (current[productId] ?? 0));
++      setQuantities({ ...current, [productId]: next });
++      setMessage(makeoverError, wanted > next && wanted > (current[productId] ?? 0) ? `We can design up to ${MAX_PLANTS} plants at once.` : '');
++      clearPreview();
++    };
++    qtyInputs.forEach((input) => input.addEventListener('change', () => setQuantity(input.dataset.qtyInput!, Number(input.value))));
++    qtySteps.forEach((button) => button.addEventListener('click', () => {
++      const productId = button.dataset.qtyPlant!;
++      setQuantity(productId, (quantities()[productId] ?? 0) + Number(button.dataset.qtyStep));
++    }));
++    renderQuantities();
+     generateButton.addEventListener('click', async () => {
+       if (creating || previewState === 'processing' || previewState === 'succeeded') return;
+       setMessage(previewError, '');
+       setMessage(plantError, '');
++      setMessage(makeoverError, '');
+       setMessage(choiceError, '');
+       if (!chosenSpace()) {
+         showStep(0);
+         validateStep(0);
+         return;
+       }
+-      if (!selectedPlant()) {
+-        setMessage(plantError, 'Choose a plant for your preview.');
+-        form.querySelector<HTMLInputElement>('input[name="productId"]')?.focus();
+-        return;
+-      }
+-      const plant = selectedPlant()!;
+-      const validPlacement = placement.value === 'auto' || plant.placements.includes(placement.value);
+-      if (!catalog.styles.some((item) => item.id === style.value) || !catalog.placements.some((item) => item.id === placement.value) || !validPlacement) {
+-        setMessage(choiceError, 'Choose a style and an available placement.');
+-        (style.value ? placement : style).focus();
+-        return;
++      let choices: Record<string, unknown>;
++      if (mode === 'makeover') {
++        const items = toItems(quantities());
++        if (!items.length) {
++          setMessage(makeoverError, 'Choose at least one plant.');
++          qtyInputs[0]?.focus();
++          return;
++        }
++        if (!catalog.styles.some((item) => item.id === style.value)) {
++          setMessage(choiceError, 'Choose a style.');
++          style.focus();
++          return;
++        }
++        choices = { mode: 'makeover', items, style: style.value };
++      } else {
++        if (!selectedPlant()) {
++          setMessage(plantError, 'Choose a plant for your preview.');
++          form.querySelector<HTMLInputElement>('input[name="productId"]')?.focus();
++          return;
++        }
++        const plant = selectedPlant()!;
++        const validPlacement = placement.value === 'auto' || plant.placements.includes(placement.value);
++        if (!catalog.styles.some((item) => item.id === style.value) || !catalog.placements.some((item) => item.id === placement.value) || !validPlacement) {
++          setMessage(choiceError, 'Choose a style and an available placement.');
++          (style.value ? placement : style).focus();
++          return;
++        }
++        choices = { productId: plant.id, style: style.value, placement: placement.value };
+       }
+       const file = validatePhoto(PREVIEW_PHOTO_LIMIT);
+       if (file === false) return;
+@@ -415,7 +553,7 @@
+         const created = await apiJson<{ id: string }>('/api/visualizations', {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+-          body: JSON.stringify({ image, spaceType: chosenSpace()!.value, productId: chosenPlant()!.value, style: style.value, placement: placement.value }),
++          body: JSON.stringify({ image, spaceType: chosenSpace()!.value, ...choices }),
+         });
+         if (token !== previewToken) return;
+         if (!ID_PATTERN.test(created.id)) throw new Error('The preview service returned an invalid result ID.');
+@@ -427,7 +565,8 @@
+       } catch (error) {
+         if (token === previewToken) {
+           setMessage(previewStatusMessage, '');
+-          setMessage(previewError, error instanceof Error ? error.message : 'Could not create a preview. Please try again.');
++          const closed = mode === 'makeover' && error instanceof ApiError && error.status === 404; // the server flag is still off
++          setMessage(previewError, closed ? 'The total plant makeover is not available yet.' : error instanceof Error ? error.message : 'Could not create a preview. Please try again.');
+         }
+       } finally {
+         creating = false;
+@@ -487,7 +626,10 @@
+         contactMethod: form.querySelector<HTMLInputElement>('input[name="contactMethod"]:checked')?.value || 'Email',
+         contact: contact.value.trim(),
+       };
+-      if (previewEnabled && chosenPlant()) payload.productId = chosenPlant()!.value;
++      if (previewEnabled && mode === 'single' && chosenPlant()) payload.productId = chosenPlant()!.value;
++      // The enquiry carries one product, so a makeover's plants travel in the notes, and in the preview when one is attached.
++      const chosenItems = previewEnabled && mode === 'makeover' ? toItems(quantities()) : [];
++      if (chosenItems.length) payload.notes = [notes.value, `Plants chosen for the makeover: ${summarise(chosenItems, plantName)}`].filter(Boolean).join('\n\n');
+       if (attachedPreview && visualizationId) payload.visualizationId = visualizationId;
+       else if (file) payload.photo = await toJpegBase64(file);
+       const saved = await apiJson<{ id: string }>('/api/enquiries', {
+@@ -503,7 +645,8 @@
+         ['Contact by', payload.contactMethod],
+         ['Light', light.selectedOptions[0]?.text || 'Not sure'],
+       ];
+-      if (previewEnabled && selectedPlant()) rows.push(['Plant', selectedPlant()!.name]);
++      if (previewEnabled && mode === 'single' && selectedPlant()) rows.push(['Plant', selectedPlant()!.name]);
++      if (chosenItems.length) rows.push(['Plants', summarise(chosenItems, plantName)]);
+       rows.forEach(([label, value]) => {
+         const row = document.createElement('p');
+         const key = document.createElement('strong');
+@@ -536,7 +679,7 @@
+     photoLabel.textContent = 'Choose a photo to share';
+     document.querySelectorAll<HTMLElement>('.field-error').forEach((error) => { error.textContent = ''; error.hidden = error.id === 'preview-error' || error.id === 'submit-error'; });
+     document.querySelectorAll<HTMLElement>('[aria-invalid]').forEach((field) => field.removeAttribute('aria-invalid'));
+-    if (previewEnabled) { updatePlacements(); clearPreview(); changeQuery('plant', null); }
++    if (previewEnabled) { setMode('single'); renderQuantities(); updatePlacements(); clearPreview(); changeQuery('plant', null); }
+     success.hidden = true;
+     form.hidden = false;
+     showStep(0);

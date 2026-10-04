@@ -1,0 +1,35 @@
+
+/* Total plant makeover: mode switch, quantity picker and design notes. Last in the file so these rules follow the shared preview styles. */
+.preview-modes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 16px 0 14px; }
+.preview-mode { position: relative; display: block; min-width: 0; padding: 12px 14px 12px 42px; border: 1px solid #c7d3c1; border-radius: 12px; background: #fff; cursor: pointer; transition: border-color 160ms, box-shadow 160ms; }
+.preview-mode input { position: absolute; top: 14px; left: 14px; width: 19px; height: 19px; accent-color: #3c6343; }
+.preview-mode strong { display: block; color: #263d2a; font-size: .85rem; }
+.preview-mode small { display: block; margin-top: 3px; color: #596b57; font-size: .72rem; line-height: 1.45; }
+.preview-mode:has(input:checked) { border-color: #3c6343; box-shadow: inset 0 0 0 1px #3c6343; }
+.preview-mode:has(input:focus-visible) { outline: 3px solid #55754c; outline-offset: 3px; }
+.preview-in-form .preview-privacy { margin-top: 8px; font-size: .74rem; }
+.makeover-card { display: flex; flex-direction: column; flex: 1; min-width: 0; padding: 9px; border: 1px solid #c7d3c1; border-radius: 12px; background: #fff; transition: border-color 160ms, box-shadow 160ms; }
+.makeover-card.is-chosen { border-color: #3c6343; box-shadow: inset 0 0 0 1px #3c6343; }
+.makeover-card img { display: block; width: 100%; max-height: 200px; aspect-ratio: 4 / 5; border-radius: 7px; background: #f2f3ef; object-fit: contain; }
+.qty { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; margin: 10px 3px 3px; border: 1px solid #c7d3c1; border-radius: 8px; overflow: hidden; background: #fff; }
+.qty-step { min-height: 44px; border: 0; background: #f2f6ee; color: #263d2a; font-size: 1.2rem; line-height: 1; cursor: pointer; }
+.qty-step[aria-disabled='true'] { color: #9aa797; cursor: not-allowed; }
+.qty-input { width: 100%; min-width: 0; min-height: 44px; padding: 0; border: 0; border-inline: 1px solid #dfe6da; border-radius: 0; background: #fff; color: #263d2a; font-size: 1rem; font-weight: 700; text-align: center; appearance: textfield; -moz-appearance: textfield; }
+.qty-input::-webkit-outer-spin-button, .qty-input::-webkit-inner-spin-button { margin: 0; -webkit-appearance: none; }
+.qty-step:focus-visible, .qty-input:focus-visible { outline: 3px solid #55754c; outline-offset: -3px; }
+.preview-design { margin-top: 18px; padding: 16px; border: 1px solid #d2d9ce; border-radius: 12px; background: #fff; }
+.preview-design-title { margin: 0 0 8px; color: var(--forest); font-size: .95rem; font-weight: 700; }
+.preview-in-form .preview-design p { color: #3d4b3b; font-size: .86rem; line-height: 1.65; }
+.preview-design-list { margin: 12px 0 0; padding-left: 18px; color: #3d4b3b; font-size: .82rem; line-height: 1.6; }
+.preview-design-list li + li { margin-top: 4px; }
+.preview-design-list:empty { display: none; }
+.preview-design-list strong { color: var(--forest); }
+@media (max-width: 520px) {
+  .preview-modes { grid-template-columns: minmax(0, 1fr); }
+  .makeover-card { display: grid; grid-template-columns: 85px minmax(0, 1fr); gap: 0 10px; align-items: center; }
+  .makeover-card img { grid-row: span 3; max-height: 105px; }
+  .makeover-card .preview-plant-name { margin: 0 0 0 0; }
+  .makeover-card .preview-plant-size { margin: 4px 0 0; }
+  .makeover-card .qty { grid-column: 2; margin: 8px 0 0; }
+}
+@media (prefers-reduced-motion: reduce) { .preview-mode, .makeover-card { transition: none; } }

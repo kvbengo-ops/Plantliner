@@ -1,0 +1,79 @@
+--- a/src/pages/index.astro
++++ b/src/pages/index.astro
+@@ -267,7 +267,13 @@
+                     <h4 id="preview-in-form-title">Preview a plant in your space</h4>
+                     <span>Optional preview</span>
+                   </div>
+-                  <p>Choose one plant, a style, and a spot. Add a room photo above to see an approximate AI preview. You can continue without creating one.</p>
++                  <div class="preview-modes" id="preview-modes" role="radiogroup" aria-label="Type of preview" hidden>
++                    <label class="preview-mode"><input type="radio" name="previewMode" value="single" checked /><strong>Place one plant</strong><small>See one plant in your space.</small></label>
++                    <label class="preview-mode"><input type="radio" name="previewMode" value="makeover" /><strong>Total plant makeover</strong><small>Pick several plants. We rearrange the seating and tables around them.</small></label>
++                  </div>
++                  <p id="preview-intro">Choose one plant, a style, and a spot. Add a room photo above to see an approximate AI preview. You can continue without creating one.</p>
++                  <p class="preview-privacy" id="preview-privacy">Your photo is processed by our AI provider (Kie) to create the preview.</p>
++                  <div id="single-picker">
+                   <fieldset class="preview-plant-field" aria-describedby="preview-plant-error">
+                     <legend>Choose a plant <span class="optional-label">Optional</span></legend>
+                     <div class="preview-plant-grid">
+@@ -285,18 +291,48 @@
+                     </div>
+                   </fieldset>
+                   <small class="field-error" id="preview-plant-error" role="status"></small>
++                  </div>
++                  <div id="makeover-picker" hidden>
++                    <fieldset class="preview-plant-field" aria-describedby="makeover-error">
++                      <legend>Choose your plants and how many <span class="optional-label" id="makeover-total" role="status">0 of 8 plants</span></legend>
++                      <div class="preview-plant-grid">
++                        {catalog.plants.map((plant) => (
++                          <div class="preview-plant-option">
++                            <div class="makeover-card">
++                              <img src={plant.image} alt="" width="1024" height="1280" loading="lazy" />
++                              <span class="preview-plant-name">{plant.name}</span>
++                              <span class="preview-plant-size">About {plant.heightCm} cm tall · {plant.potDiameterCm} cm pot</span>
++                              <div class="qty" role="group" aria-label={`${plant.name} quantity`}>
++                                <button type="button" class="qty-step" data-qty-plant={plant.id} data-qty-step="-1" aria-label={`Fewer ${plant.name}`}>−</button>
++                                <input type="number" class="qty-input" data-qty-input={plant.id} min="0" max="8" step="1" value="0" inputmode="numeric" aria-label={`${plant.name} quantity`} />
++                                <button type="button" class="qty-step" data-qty-plant={plant.id} data-qty-step="1" aria-label={`More ${plant.name}`}>+</button>
++                              </div>
++                            </div>
++                            <button type="button" class="preview-expand preview-plant-expand" data-plant-image={plant.id} aria-label={`View ${plant.name} photo full screen`}>View full screen</button>
++                          </div>
++                        ))}
++                      </div>
++                    </fieldset>
++                    <small class="field-error" id="makeover-error" role="status"></small>
++                  </div>
+                   <div class="field-pair preview-options">
+                     <div class="field"><label for="preview-style">Style</label><div class="select-shell"><select id="preview-style" name="style"><option value="">Choose a style</option>{catalog.styles.map((style) => <option value={style.id}>{style.label}</option>)}</select></div></div>
+-                    <div class="field"><label for="preview-placement">Placement</label><div class="select-shell"><select id="preview-placement" name="placement" disabled><option value="">Choose a plant first</option></select></div></div>
++                    <div class="field" id="preview-placement-field"><label for="preview-placement">Placement</label><div class="select-shell"><select id="preview-placement" name="placement" disabled><option value="">Choose a plant first</option></select></div></div>
+                   </div>
+                   <small class="field-error" id="preview-choice-error" role="status"></small>
+-                  <button class="button button-green preview-generate" id="preview-generate" type="button">Create my preview <ArrowIcon direction="up-right" /></button>
++                  <button class="button button-green preview-generate" id="preview-generate" type="button"><span id="preview-generate-label">Create my preview</span> <ArrowIcon direction="up-right" /></button>
+                   <p class="preview-feedback" id="preview-status" role="status" aria-live="polite" hidden></p>
+                   <p class="field-error preview-error" id="preview-error" role="alert" tabindex="-1" hidden></p>
+                   <div class="preview-result" id="preview-result" hidden>
+                     <p class="preview-result-title" id="preview-result-title"></p>
+-                    <p class="preview-ai-label">Approximate AI preview. Plant size and placement may differ in real life.</p>
++                    <p class="preview-ai-label" id="preview-ai-label">Approximate AI preview. Plant size and placement may differ in real life.</p>
+                     <div class="preview-images"><figure><img id="preview-before" alt="Your room before adding a plant" /><figcaption><span>Before</span><button type="button" class="preview-expand" data-preview-image="before" aria-label="View before photo full screen">View full screen</button></figcaption></figure><figure><img id="preview-after" alt="AI preview of your room with the selected plant" /><figcaption><span>After</span><button type="button" class="preview-expand" data-preview-image="after" aria-label="View after photo full screen">View full screen</button></figcaption></figure></div>
++                    <div class="preview-design" id="preview-design" hidden>
++                      <h5 class="preview-design-title">How we designed it</h5>
++                      <p id="preview-rationale"></p>
++                      <ul class="preview-design-list" id="preview-moves" aria-label="Furniture changes"></ul>
++                      <ul class="preview-design-list" id="preview-spots" aria-label="Where each plant goes"></ul>
++                    </div>
+                     <div class="preview-result-actions"><button type="button" class="wizard-back" id="preview-again">Try another look</button><a id="preview-share" href="/#enquiry">Share this preview</a></div>
+                     <p class="preview-link-note">Anyone with this result link can view your room photo and preview.</p>
+                   </div>
+@@ -367,7 +403,8 @@
+     <script>
+       import { initPlantPlan } from '../scripts/plantPlan';
+       const PREVIEW_ENABLED = true;
+-      initPlantPlan(PREVIEW_ENABLED);
++      const MAKEOVER_ENABLED = false; // set true once the makeover passes its quality gate (G1) and the server flag is on
++      initPlantPlan(PREVIEW_ENABLED, MAKEOVER_ENABLED);
+ 
+       // Native centered snapping owns touch momentum; controls and mouse drag share its targets.
+       const solutions = document.querySelector<HTMLElement>('.solutions-section');
